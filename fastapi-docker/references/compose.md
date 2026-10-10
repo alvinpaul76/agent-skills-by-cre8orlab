@@ -146,6 +146,17 @@ Points to notice:
   file is mounted at `/run/secrets/` inside the container.
 - **`FORWARDED_ALLOW_IPS` is set to the proxy's network**, not `*`. Adjust the
   range to match the real proxy address in each environment.
+- **Compose reads `.env` only when it creates the container.** After editing
+  `.env`, run `docker compose up -d --force-recreate`, or the running
+  container keeps the old values (a changed API key then looks like a 401).
+  Compare values without printing them: `printf %s "$v" | sha256sum | cut -c1-8`
+  for the `.env` line and for `docker compose exec -T api printenv NAME`.
+- **Define each variable once in `.env`.** With duplicates the last line wins
+  and the earlier value is silently ignored.
+- **Use `${VAR:-default}` for settings the app validates itself**, and `${VAR:?msg}`
+  only for values that are always required. A `:?` on a key that a feature
+  switch can make optional (for example `AUTH_ENABLED=false`) blocks the
+  switch.
 - **The image tag is a fixed local name**, and both services share it so the
   build happens once. In CI, push a tag derived from the git commit instead.
 

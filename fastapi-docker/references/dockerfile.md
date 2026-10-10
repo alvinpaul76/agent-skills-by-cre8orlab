@@ -50,8 +50,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     APP_ENV=production
 
+# A digest-pinned base freezes its patch level, so apply OS patches released since.
+# pip is removed: nothing installs packages at runtime, and its vendored libraries
+# (urllib3, msgpack, ...) show up as CVEs in scanners. See references/security-scanning.md.
 # Fixed numeric UID/GID so policies (Kubernetes runAsUser, etc.) can reference it.
-RUN groupadd --system --gid 10001 app \
+RUN apt-get update \
+ && apt-get upgrade --yes --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/local/lib/python3.14/site-packages/pip* /usr/local/bin/pip* \
+ && groupadd --system --gid 10001 app \
  && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 
 WORKDIR /srv
@@ -76,6 +83,9 @@ CMD ["sh", "-c", "exec uvicorn app.main:create_app --factory --host 0.0.0.0 --po
 
 Notes on the choices above:
 
+- Pin `FROM` lines (and the `COPY --from=...uv` image) with `@sha256:` digests
+  in production. `docker buildx imagetools inspect python:3.14-slim-trixie`
+  prints the digest. The examples show tags for readability.
 - `--mount=type=cache` keeps the uv download cache out of the image while
   speeding up rebuilds.
 - `--locked` fails the build if `uv.lock` is out of date with
@@ -222,8 +232,11 @@ docker build -t myapi:$(git rev-parse --short HEAD) .
 docker run --rm --entrypoint id myapi:$(git rev-parse --short HEAD)
 # expect uid=10001(app)
 
-# Scan for known vulnerabilities before pushing
-trivy image --severity HIGH,CRITICAL --ignore-unfixed myapi:$(git rev-parse --short HEAD)
+# Scan for known vulnerabilities before pushing (see references/security-scanning.md)
+trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 myapi:$(git rev-parse --short HEAD)
+
+# Confirm pip is gone from the runtime image
+docker run --rm --entrypoint sh myapi:$(git rev-parse --short HEAD) -c 'which pip && exit 1 || echo no-pip'
 
 # Check that no secret-looking strings ended up in the image
 docker history --no-trunc myapi:$(git rev-parse --short HEAD) | grep -i -E 'password|secret|token' || echo "clean"

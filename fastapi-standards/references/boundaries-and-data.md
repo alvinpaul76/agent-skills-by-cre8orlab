@@ -196,6 +196,20 @@ non-blocking I/O, such as an async database driver or async HTTP client.
 
 Choose based on actual workload and library support, not fashion.
 
+### In-process models and other heavy shared resources
+
+-   Load the resource once in lifespan, keep it on `app.state`, and report
+    readiness only after it loads. `/health/live` stays up while it loads.
+-   When the library is not thread-safe, guard each call with a
+    `threading.Lock` inside the adapter. Lock per call, not per request, so
+    concurrent requests interleave instead of queueing whole batches.
+-   Sync routes plus a lock serialize the work; that is the correct trade-off
+    for one local model. Scale with replicas, not threads.
+-   Keep the heavy dependency imported only in infrastructure, and give tests
+    a deterministic `mock` backend so they never load weights.
+-   Choose the backend with a setting (`local` or `hosted`) behind one
+    adapter surface, so routes, use cases, and tests do not change.
+
 
 ## 12. Error handling
 

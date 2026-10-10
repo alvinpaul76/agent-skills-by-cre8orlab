@@ -93,6 +93,7 @@ noted.
 #### Security and operations
 
 -   [ ] Authentication and authorization are enforced where required.
+-   [ ] Required keys fail closed at startup; safety switches default to secure.
 -   [ ] Secrets and personal data are not leaked through logs or
     responses.
 -   [ ] Timeouts and resource limits are configured.
