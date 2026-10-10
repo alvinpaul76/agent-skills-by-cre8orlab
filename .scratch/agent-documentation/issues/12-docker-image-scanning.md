@@ -4,6 +4,9 @@ Status: resolved
 Type: task
 
 ## Answer
-Commit 4d0164e (2026-10-10), merged in PR #2. Added `fastapi-docker/references/security-scanning.md`.
+Added `fastapi-docker/references/security-scanning.md` (scan the built image, triage
+findings by source, gate CI on fixable HIGH/CRITICAL) and updated the Dockerfile
+reference to remove pip from the runtime stage and apply OS patches on digest-pinned
+base images.
 
 ## Comments

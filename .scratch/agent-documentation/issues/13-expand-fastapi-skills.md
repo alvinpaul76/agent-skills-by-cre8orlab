@@ -4,6 +4,9 @@ Status: resolved
 Type: task
 
 ## Answer
-Commit fb52569 (2026-10-10), merged in PR #2.
+Expanded `fastapi-standards/references/operations.md` with settings patterns
+(SecretStr, fail-closed startup), a static API-key auth pattern, batch-endpoint
+design, hosted-vendor adapter guidance, and app-factory startup. Added `.env`
+pitfalls to `fastapi-docker`'s compose reference.
 
 ## Comments

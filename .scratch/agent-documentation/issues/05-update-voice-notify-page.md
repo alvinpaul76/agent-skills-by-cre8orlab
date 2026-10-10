@@ -1,4 +1,4 @@
-# Align docs/plugins/voice-notify.md with the new plugin template
+# Update the voice-notify docs page to match the plugin template
 
 Status: needs-triage
 Type: task

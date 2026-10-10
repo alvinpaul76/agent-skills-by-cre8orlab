@@ -4,6 +4,8 @@ Status: resolved
 Type: task
 
 ## Answer
-Commits 0886cfd, 139a34d (2026-10-09), merged in PR #1. Initial repo plus the first FastAPI skills (`fastapi-standards`, `fastapi-docker`).
+Initial repo plus the first FastAPI skills: `fastapi-standards` (layered-architecture
+standards with four reference files) and `fastapi-docker` (container and deployment
+standards with Dockerfile and compose references).
 
 ## Comments

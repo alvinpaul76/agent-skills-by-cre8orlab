@@ -9,6 +9,8 @@ Issues and specs for this repo live as markdown files in `.scratch/`.
 - Implementation issues are one file per ticket at `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01`, never a single combined tickets file
 - Triage state is recorded as a `Status:` line near the top of each issue file (see `triage-labels.md` for the role strings)
 - Comments and conversation history append to the bottom of the file under a `## Comments` heading
+- `## Answer` sections describe the implemented change (what was added or altered and where), not commit hashes or PR numbers — git already records those
+- Use plain words in titles and filename slugs — no jargon (write `test-the-skill`, not `dogfood-the-skill`)
 
 ## When a skill says "publish to the issue tracker"
 

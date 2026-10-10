@@ -1,4 +1,4 @@
-# Make check_docs.py verify plugin pages like skill pages
+# Teach check_docs.py to check plugin pages too
 
 Status: needs-triage
 Type: task

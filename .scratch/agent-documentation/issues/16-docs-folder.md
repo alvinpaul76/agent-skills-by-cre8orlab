@@ -4,6 +4,8 @@ Status: resolved
 Type: task
 
 ## Answer
-Commit c9e4e27 (2026-10-11). Added `docs/` pages (how skills work, installation, creating a skill, troubleshooting, glossary, per-skill and plugin pages).
+Added `docs/` pages for this repo (how skills work, per-agent installation, creating
+a skill, one page per skill, a voice-notify plugin page, troubleshooting, glossary)
+and slimmed `README.md` to a project summary with a Skills table.
 
 ## Comments

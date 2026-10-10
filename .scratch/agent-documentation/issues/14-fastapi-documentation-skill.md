@@ -4,6 +4,9 @@ Status: resolved
 Type: task
 
 ## Answer
-Commit 588591c (2026-10-11). Plain-language API docs skill with references and `scripts/check_docs.py`. This is the model for ticket 06.
+Added the `fastapi-documentation` skill: `SKILL.md` with a 7-step docs workflow,
+`references/plain-language.md` (word rules, before/after examples), page templates,
+and `scripts/check_docs.py` (link/anchor, fence, title, secret checks). This is the
+model for ticket 06.
 
 ## Comments
