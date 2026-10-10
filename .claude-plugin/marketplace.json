@@ -1,0 +1,13 @@
+{
+  "name": "agent-skills-by-cre8orlab",
+  "owner": {
+    "name": "Cre8or Lab"
+  },
+  "plugins": [
+    {
+      "name": "voice-notify",
+      "source": "./plugins/voice-notify",
+      "description": "Speaks aloud when Claude Code needs your approval or finishes, so you can step away from the terminal. Local hooks: no LLM, no tokens."
+    }
+  ]
+}
