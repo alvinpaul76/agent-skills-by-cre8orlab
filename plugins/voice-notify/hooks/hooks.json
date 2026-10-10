@@ -1,0 +1,27 @@
+{
+  "description": "Speak an alert when Claude Code needs attention or finishes a turn",
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/alert.py\" || python \"${CLAUDE_PLUGIN_ROOT}/scripts/alert.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/alert.py\" || python \"${CLAUDE_PLUGIN_ROOT}/scripts/alert.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

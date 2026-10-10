@@ -149,7 +149,9 @@ tests/
 migrations/                      # Alembic migrations
 pyproject.toml
 .env.example
-README.md
+README.md                        # project summary + APIs table
+docs/                            # architecture, apis/<feature>.md, troubleshooting
+                                 # (written with the fastapi-documentation skill)
 ```
 
 ### Structure guidelines

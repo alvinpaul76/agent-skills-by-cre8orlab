@@ -1,0 +1,18 @@
+{
+  "name": "voice-notify",
+  "version": "1.0.0",
+  "description": "Speaks aloud when Claude Code needs your approval or finishes, so you can step away from the terminal. Local hooks: no LLM, no tokens.",
+  "author": {
+    "name": "Cre8or Lab"
+  },
+  "homepage": "https://github.com/alvinpaul76/agent-skills-by-cre8orlab",
+  "repository": "https://github.com/alvinpaul76/agent-skills-by-cre8orlab",
+  "license": "MIT",
+  "keywords": [
+    "hooks",
+    "notification",
+    "voice",
+    "tts",
+    "alert"
+  ]
+}
