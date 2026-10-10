@@ -157,7 +157,20 @@ Apply these to every production service. Compose examples show how.
   pinning the version does not pin the patch level unless you use a digest.
 - Interactive docs (`/docs`, `/redoc`, `/openapi.json`) disabled or protected
   in production.
-- No package managers, compilers, or build tools in the runtime stage.
+- No package managers, compilers, or build tools in the runtime stage. This
+  includes pip: the Python base image ships it, and its vendored libraries are
+  a common source of scanner findings, so delete it in the runtime stage.
+- Digest-pinned base images, with `apt-get upgrade` in the runtime stage so OS
+  patches released after the pinned digest still land.
+
+## Scanning and fixing vulnerabilities
+
+Scan the built image, not the Dockerfile, because findings come from the
+packages that end up in it. Read `references/security-scanning.md` for the
+commands, how to tell where a finding comes from (OS package, your lock file,
+or pip's vendored copies), and the fix for each. Gate CI on HIGH and CRITICAL
+findings that have a fix available, and report unfixed ones separately so they
+do not block builds nobody can act on.
 
 ## Reviewing a Dockerfile or compose file
 
@@ -169,7 +182,9 @@ Apply these to every production service. Compose examples show how.
    healthcheck.
 4. Check compose: healthchecks and dependency conditions, network exposure,
    volumes, secrets, hardening options.
-5. Report findings by severity (blocker, should fix, suggestion) with the
+5. Scan the built image (see `references/security-scanning.md`) rather than
+   guessing at CVEs from the Dockerfile text.
+6. Report findings by severity (blocker, should fix, suggestion) with the
    corrected lines. Say what is already correct. Do not invent problems in a
    simple, correct file.
 
@@ -179,4 +194,6 @@ Apply these to every production service. Compose examples show how.
   variants), `.dockerignore`, BuildKit secret mount, HEALTHCHECK.
 - `references/compose.md`: compose file with app, migrate, and Postgres
   services; dev override; hardening options.
+- `references/security-scanning.md`: scanning the image, triaging findings by
+  source, the standard fixes, and CI gating.
 - Read only the file the task needs.
