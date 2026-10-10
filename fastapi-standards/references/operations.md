@@ -34,6 +34,31 @@
 Configuration should describe deployment behavior, not conceal business
 rules in environment variables.
 
+### Settings patterns
+
+-   Wrap secrets in `SecretStr` so they do not appear in `repr()` or logs;
+    call `get_secret_value()` only where the secret is used.
+-   Name inbound and outbound credentials differently. A key clients send to
+    this service (`CLIENT_API_KEYS`) and a key this service sends to a
+    vendor (`VENDOR_API_KEY`) are unrelated; one shared name causes
+    misconfiguration. Say which is which in `.env.example` and the README.
+-   Parse a list from one environment variable with
+    `Annotated[list[SecretStr], NoDecode]` and a `field_validator(mode="before")`
+    that splits on commas, strips whitespace, and drops empties. `NoDecode`
+    stops pydantic-settings from expecting JSON.
+-   Validate secret strength in the settings class (for example, at least 32
+    characters), so a weak value fails at startup.
+-   Make required-in-production settings fail closed. Check in `create_app`
+    (not in `Settings.__init__`, so unit tests can still construct
+    `Settings`), and raise `RuntimeError` naming the variable.
+-   Give every safety switch (such as `AUTH_ENABLED`) a secure default, log a
+    WARNING at startup when it is off, and say in the README that it is for
+    local development only.
+-   Keep one definition of each variable: `config.py`, `.env.example`, the
+    compose file, and the README list the same names and defaults.
+-   Provide a `make_settings(**overrides)` test helper that sets
+    `_env_file=None`, so a developer's real `.env` never leaks into tests.
+
 
 ## 14. Authentication, authorization, and security
 
@@ -69,6 +94,63 @@ rules in environment variables.
     storage paths.
 
 Security decisions must be enforced server-side and covered by tests.
+
+### Static API-key authentication
+
+Use this for service-to-service or internal APIs where callers are known and
+a full token system is more than the risk calls for.
+
+-   Read the key from one header (`X-API-Key`) through
+    `APIKeyHeader(name="X-API-Key", auto_error=False)`. This also adds the
+    Authorize button to the interactive docs.
+-   Protect a whole version with one router-level dependency
+    (`APIRouter(prefix="/v1", dependencies=[Depends(require_api_key)])`), so
+    new routes are protected without per-route code. Mount health endpoints
+    outside that router so probes work without a key.
+-   Accept a list of keys so a key can be rotated: add the new key, move
+    callers over, then remove the old one.
+-   Compare with `secrets.compare_digest` against every configured key without
+    an early exit, so timing does not reveal which key came close.
+-   Return the same 401 for a missing and a wrong key, with a
+    `WWW-Authenticate` header and a stable error `code`. Authentication is a
+    transport concern: raise an API-layer `Unauthorized`, not a `DomainError`.
+-   Log rejections with the request id and client address, and never log the
+    presented key.
+-   Check the key before body validation, so unauthenticated callers learn
+    nothing about the request schema.
+-   Fail closed at startup when auth is enabled and no keys are configured.
+-   Test: missing key, wrong key (identical response), valid key, each key in
+    a rotation list, auth before validation, open health endpoints, startup
+    failure with no keys, and the auth-disabled path.
+
+#### Settings for the pattern
+
+| Variable | Default | Behavior |
+|---|---|---|
+| `<PREFIX>_CLIENT_API_KEYS` | empty | Comma-separated keys that callers send in `X-API-Key`. Each key is at least 32 characters. Required while auth is enabled. |
+| `<PREFIX>_AUTH_ENABLED` | `true` | `false` turns the key check off so `/api/v1/*` accepts any request. Local development only. |
+
+-   `AUTH_ENABLED=true`: `create_app` raises `RuntimeError` naming
+    `CLIENT_API_KEYS` when the list is empty.
+-   `AUTH_ENABLED=false`: keys become optional, `require_api_key` returns
+    immediately, and `create_app` logs a WARNING that the API is open. Body
+    validation and every other check still run.
+-   Put the toggle check inside `require_api_key` (and the startup check),
+    so the routes and the router stay identical in both modes.
+-   Pass both variables through the compose file with
+    `${<PREFIX>_AUTH_ENABLED:-true}` and `${<PREFIX>_CLIENT_API_KEYS:-}`, and
+    let the app's own startup check enforce the keys. A compose `:?`
+    requirement would block a deliberate `AUTH_ENABLED=false`.
+-   Document both in `.env.example` with a command to generate a key
+    (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
+-   With auth off the interactive docs still show the Authorize button
+    (the security scheme stays in the OpenAPI schema), so say that the key is
+    ignored.
+-   Never define the same variable twice in `.env`: the last definition wins
+    and the earlier one is silently ignored.
+
+Out of scope for this pattern: rate limiting, per-key quotas, and hashed key
+storage. Add them when keys move into a database or callers become untrusted.
 
 
 ## 15. Logging, observability, and health
@@ -116,6 +198,11 @@ Tests should follow the architecture.
     correctness.
 -   Test external adapters with controlled responses or a local test
     server.
+-   Test hosted-API adapters with `httpx.MockTransport` (inject the
+    `httpx.Client`): assert the wire format (path, auth header, body) and
+    that 401, 429, and 500 become the application error.
+-   Verify a hosted integration once by hand with a real key, and say in the
+    PR that automated tests never call it.
 
 ### API tests
 
@@ -180,6 +267,26 @@ tests independent of route tests.
 -   Define date/time formats, timezone expectations, decimal precision,
     and enum behavior explicitly.
 -   Do not use a successful HTTP response to conceal a business failure.
+
+### Batch endpoints
+
+-   Cap the batch size in the request schema (`Field(min_length=1, max_length=N)`)
+    and in the domain, and cap each text field.
+-   Require a client-supplied `id` per item, reject duplicates, and return
+    results in input order keyed by that id.
+-   Validate the whole batch before doing any work. Choose all-or-nothing
+    (one 422 or 503 for the request) unless callers need per-item outcomes;
+    when they do, return a per-item status and keep the HTTP status 200.
+-   Estimate worst-case latency (items x per-item time) against the client
+    and proxy timeouts. When it will not fit, move the work to an async job
+    with a job id (section 18).
+-   Reject output-only fields (labels, scores, status) in the request with
+    `extra="forbid"`, so callers cannot feed answers into the model or
+    bypass computed values.
+-   Give the port a `classify_many`-style method so an adapter can later
+    parallelize without changing the use case.
+-   Replacing a response shape is a breaking change: add a new version, or
+    state in the PR that no consumer depends on the old shape.
 
 
 ## 18. Background jobs and messaging
@@ -251,6 +358,12 @@ CLI command --------+
     handling.
 -   Do not open database connections or start workers as import-time
     side effects.
+-   Do not create `app = create_app()` at module level when startup
+    validates configuration (for example, fail-closed keys): importing the
+    module would crash. Run uvicorn with `--factory` and a `main()` script
+    entry (`uvicorn.run("pkg.main:create_app", factory=True, ...)`).
+-   When docs are exposed, redirect `/` to `/docs` (excluded from the
+    schema and open without auth); when they are not, leave `/` as a 404.
 -   Run database migrations as a controlled deployment step.
 -   Configure trusted hosts, proxy headers, TLS termination, and allowed
     origins appropriately for the deployment.

@@ -460,3 +460,9 @@ adapters/clients.
     integration errors.
 -   Never treat an external service response as trusted input.
 -   Do not place provider-specific response objects in the domain model.
+-   Wrap a hosted vendor API in a small client class with the same method
+    surface as the local alternative, so the adapter depends on one shape.
+-   Map every vendor failure (HTTP 4xx and 5xx, timeouts, malformed
+    bodies) to one application error such as `ClassifierUnavailable`; the
+    API layer then returns a stable 503 without vendor detail.
+-   Keep the vendor key out of logs and error bodies.
