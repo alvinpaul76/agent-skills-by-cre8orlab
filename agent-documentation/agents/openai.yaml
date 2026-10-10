@@ -1,0 +1,3 @@
+interface:
+  display_name: "Agent Documentation"
+  short_description: "Plain-language docs for agent skills and plugins, readable by non-developers"

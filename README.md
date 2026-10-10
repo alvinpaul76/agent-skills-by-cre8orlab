@@ -16,6 +16,7 @@ task calls for it.
 | fastapi-standards | Layered-architecture standards for building, reviewing, and refactoring FastAPI services | [fastapi-standards](docs/skills/fastapi-standards.md) |
 | fastapi-docker | Container, deployment, and image-scanning standards for FastAPI services | [fastapi-docker](docs/skills/fastapi-docker.md) |
 | fastapi-documentation | Writes plain-language docs that non-developers can follow | [fastapi-documentation](docs/skills/fastapi-documentation.md) |
+| agent-documentation | Writes plain-language docs for agent skills and plugins | [agent-documentation](docs/skills/agent-documentation.md) |
 
 Each page explains when the skill triggers and what is inside it.
 The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin for

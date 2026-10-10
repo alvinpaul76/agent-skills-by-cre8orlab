@@ -19,3 +19,8 @@ The terms these docs use, in plain words.
 | Multi-stage build | A Dockerfile technique that builds in one stage and copies only the result into the final, smaller image. |
 | API | A way for one program to ask another program to do something. |
 | FastAPI | A Python framework for building APIs. |
+| Hook | A small action the editor runs automatically when something happens, such as the agent finishing a turn. |
+| MCP server | A helper program that gives the agent extra tools it can call. |
+| Token | The unit an AI model is billed and limited by; roughly a few characters of text. |
+| LLM | The AI language model behind an agent. |
+| Slash command | A command typed with a leading `/` that starts a skill or action by name. |
