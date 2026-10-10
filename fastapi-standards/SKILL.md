@@ -71,7 +71,7 @@ Follow this order so business rules stay framework-independent:
 8. Test per layer: domain unit tests first, then integration, then API.
 9. Review security and reliability: authorization, transactions, retries,
    timeouts, logging.
-10. Document the contract.
+10. Document the contract (use the `fastapi-documentation` skill).
 
 For concrete code patterns (thin route, use case, repository `Protocol`,
 session dependency, exception handlers, app factory and lifespan, test

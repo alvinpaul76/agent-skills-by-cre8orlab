@@ -1,0 +1,3 @@
+interface:
+  display_name: "FastAPI Documentation"
+  short_description: "Plain-language docs for a FastAPI service, readable by non-developers"
