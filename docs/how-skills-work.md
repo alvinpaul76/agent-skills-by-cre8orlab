@@ -54,6 +54,10 @@ you get work that follows the skill's standards
 │   ├── SKILL.md
 │   ├── references/
 │   └── scripts/check_docs.py   a docs checker the skill runs
+├── agent-documentation/        plain-language docs for skills and plugins
+│   ├── SKILL.md
+│   ├── references/
+│   └── scripts/check_docs.py   checks every skill and plugin has a page
 ├── plugins/voice-notify/       a Claude Code plugin (not a skill): spoken alerts
 ├── .claude-plugin/             marketplace listing for the plugin
 └── docs/                       these pages
