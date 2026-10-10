@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Checks a repo's markdown docs. Usage: python check_docs.py [repo_root]
 
-Fails (exit 1) on: broken relative links or heading anchors, unbalanced code fences, a page that does
+Fails (exit 1) on: broken relative links or heading anchors, a docs/apis page the README
+does not link, a README without an '## APIs' section, unbalanced code fences, a page that does
 not open with a title and a purpose line, and strings that look like real secrets.
 Warns about: a long README and developer jargon to double-check.
 """
@@ -90,6 +91,18 @@ def main() -> int:
             for term in JARGON:
                 if re.search(rf"(?i)\b{re.escape(term)}", prose) and term.lower() not in glossary_text:
                     warnings.append(f"{rel}:{n}: '{term}' - explain it or add it to the glossary")
+
+    readme = root / "README.md"
+    if readme.exists():
+        readme_text = readme.read_text()
+        for api_page in sorted((root / "docs" / "apis").glob("*.md")):
+            if f"docs/apis/{api_page.name}" not in readme_text:
+                errors.append(f"README.md: add a row to the APIs table linking docs/apis/{api_page.name}")
+        if "## APIs" not in readme_text and (root / "docs" / "apis").exists():
+            errors.append("README.md: missing an '## APIs' section")
+        for n, line in enumerate(readme_text.splitlines(), 1):
+            if re.search(r"curl .*(/api/|-X POST)|\"results\"\s*:", line):
+                warnings.append(f"README.md:{n}: API request or answer example; move it to the API page")
 
     for message in errors:
         print("ERROR  ", message)

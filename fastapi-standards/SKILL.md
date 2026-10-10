@@ -71,7 +71,9 @@ Follow this order so business rules stay framework-independent:
 8. Test per layer: domain unit tests first, then integration, then API.
 9. Review security and reliability: authorization, transactions, retries,
    timeouts, logging.
-10. Document the contract (use the `fastapi-documentation` skill).
+10. Document the contract with the `fastapi-documentation` skill: README APIs table,
+    one page per API, troubleshooting, glossary. The step is done when its
+    `scripts/check_docs.py` passes.
 
 For concrete code patterns (thin route, use case, repository `Protocol`,
 session dependency, exception handlers, app factory and lifespan, test
@@ -90,6 +92,9 @@ fixtures), read the reference files listed below before writing code.
 4. Say what is already done well. Do not manufacture findings.
 5. If the code is a small script or prototype, do not demand the full
    layered architecture; call out only what would cause real problems.
+6. When the change adds or alters an endpoint, setting, or error code, check
+   that the docs were updated the way the `fastapi-documentation` skill
+   describes. Report missing docs as **should fix**.
 
 ## Where to find details
 
@@ -103,6 +108,7 @@ file(s) relevant to the task.
 | Pydantic schemas, dependency injection and wiring, DB sessions and transactions, sync vs async, error taxonomy and exception handlers | `references/boundaries-and-data.md` | 8-12 |
 | Settings and secrets, auth and security, logging and health, testing strategy, API design and versioning, background jobs, performance, code style, app lifecycle and deployment, tooling | `references/operations.md` | 13-22 |
 | Anti-patterns, definition of done, non-negotiable rules detail, implementation order | `references/review-checklist.md` | 23-25 |
+| Writing or updating the README, API pages, troubleshooting, glossary, or deployment notes | the `fastapi-documentation` skill (separate skill) | not numbered |
 
 Common pairings: a new endpoint usually needs `architecture.md` (sections 4,
 6) and `boundaries-and-data.md` (sections 8, 9, 12); a PR review needs
@@ -117,5 +123,8 @@ Common pairings: a new endpoint usually needs `architecture.md` (sections 4,
 - When a standard conflicts with the user's explicit instruction or an
   existing project convention, follow the user, but mention the trade-off in
   one or two sentences so it is a conscious choice.
+- Documentation for new or changed endpoints, settings, and error codes follows
+  the `fastapi-documentation` skill, so docs are written in plain language and
+  stay in step with the code.
 - Code samples in the references are abbreviated. Add imports and
   project-specific names when generating real code.

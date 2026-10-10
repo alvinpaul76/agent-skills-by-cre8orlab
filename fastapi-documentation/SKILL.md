@@ -15,7 +15,7 @@ starter, before/after examples). Take page layouts from `references/templates.md
 ## What gets produced
 
 ```
-README.md                  short landing page: what it is, try it in 5 minutes, links
+README.md                  project summary: purpose, APIs table linking to docs, get running, links
 docs/
 ├── architecture.md        how it works, in plain words first, details after
 ├── apis/<feature>.md      one page per feature (named for what it does, not its URL)
@@ -36,7 +36,9 @@ Find with search, not guesswork: the app factory (`create_app` or `FastAPI(...)`
 every `APIRouter` and `include_router` prefix, middleware, exception handlers,
 startup hooks, auth dependencies, and the settings and environment variables. Read
 the tests: they hold realistic example requests. Read any existing README and docs
-so you extend them instead of replacing them.
+so you extend them instead of replacing them. Also learn what the project is *for*
+(README, `pyproject.toml` description, folder names). If it is not clear, ask the owner one
+question; the README summary is only as good as this answer.
 
 Then get real examples: call the endpoints with the test client or the running app,
 using the `mock` backend or a placeholder key, and keep the actual answers.
@@ -79,10 +81,19 @@ that switch protections on or off. Each setting says what it does, the safe valu
 production, and the risk of the other value. If running is just `uv run <cmd>`, skip
 this file.
 
-### 6. Rewrite README.md as the landing page
+### 6. Rewrite README.md as the project summary
 
-Follow the template. A newcomer must reach a first successful answer from the README
-alone. It carries no detail that a linked page owns.
+The README describes the project, not one API: its purpose, an **APIs** section, how to get
+it running, and links. The APIs section is a table with one row per `docs/apis/<feature>.md`
+(name, one plain sentence, link). It is the front door to the API pages, so a project with
+several APIs shows all of them and a new API is easy to find. First requests, endpoint
+paths and example answers live on the API pages, not here.
+
+Follow the template.
+
+Done when: every `docs/apis/*.md` is linked from the README's APIs table, a newcomer can get
+a running and ready service from the README alone, and the README has no endpoint paths or
+request and response examples.
 
 ### 7. Check
 
@@ -92,7 +103,8 @@ Run the checker, then do the reading test.
 python <skill-dir>/scripts/check_docs.py <repo-root>
 ```
 
-It fails on broken links or heading anchors, unbalanced code fences, pages without a title and purpose
+It fails on broken links or heading anchors, an API page the README does not link to,
+unbalanced code fences, pages without a title and purpose
 line, and text that looks like a real secret. It warns about developer jargon: for
 each warning, explain the term in place or add it to the glossary.
 
@@ -101,6 +113,7 @@ Reading test, answered by rereading as a newcomer would:
 - Is there a word I would have to ask a developer about?
 - Could I do the first task by following the steps exactly?
 - Does each example match what the code really returns?
+- Does the README tell me what the project is for and list every API, without teaching one API?
 
 ## Rules
 

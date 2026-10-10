@@ -3,35 +3,52 @@
 Fill the angle-bracket parts from the code. Keep the section order: the reader meets
 the purpose first, the details last. Every "Done when" line is a check you can make.
 
-## README.md (landing page, about 50 lines)
+## README.md (project summary, about 50 lines)
+
+The README describes the project, not any one API. A reader should learn what the
+project is for, which APIs it offers, how to get it running, and where the docs are.
 
 ```markdown
 # <Project name>
 
-<One sentence: what it does and for whom, in plain words.>
+<Two sentences: what the project is for, and how it is organized. Name the purpose
+the owner gave it (for example "a playground for testing X and building X-powered
+APIs"), not just the one API that exists today.>
 
-## What can I do with it?
-- <Task 1 in plain words>
-- <Task 2>
+## What is it for?
+- <Purpose 1 in plain words>
+- <Purpose 2>
 
-## Try it in 5 minutes
-1. <Copy the settings file: command>
+## APIs
+| API | What it does | Docs |
+|---|---|---|
+| <Name> | <One plain sentence> | [<Name> API](docs/apis/<feature>.md) |
+
+<One line: each page has a step-by-step first request; how to add an API.>
+
+## Get it running
+1. <Copy the settings file and create a key: commands>
 2. <Start the service: command>
-3. <One minimal request: command, then the answer you should see>
+3. <Check it is ready: command, then the answer you should see>
+4. <Where to explore it (interactive docs), and a pointer to the API pages for a first request>
 
 ## Run the tests
 <command>
 
+## Run it in Docker
+<command>
+
 ## Docs
 - [How it works](docs/architecture.md): the big picture in plain words
-- [API: <feature>](docs/apis/<feature>.md)
-- [Running it for real](docs/deployment.md)
 - [Something went wrong?](docs/troubleshooting.md)
+- [Running it for real](docs/deployment.md)
 - [Word list](docs/glossary.md)
 ```
 
-Done when: a newcomer can reach a first successful answer using only this page, and
-the page carries no per-endpoint detail.
+Done when: every `docs/apis/*.md` page has a row in the APIs table, a newcomer can get a
+running, ready service from this page alone, and the page holds no endpoint paths and no
+request or response examples (those belong to the API pages). If you do not know the
+project's purpose, ask the owner in one question instead of guessing.
 
 ## docs/architecture.md (shared design)
 

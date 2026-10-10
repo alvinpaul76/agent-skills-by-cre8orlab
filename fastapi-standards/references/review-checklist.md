@@ -105,7 +105,10 @@ noted.
 -   [ ] Repository behavior has integration tests where needed.
 -   [ ] API behavior, validation, and authorization are tested.
 -   [ ] Formatting, linting, type checks, and tests pass.
--   [ ] Documentation and configuration examples are updated.
+-   [ ] Documentation and configuration examples are updated, following the
+    `fastapi-documentation` skill: the README's APIs table lists every API,
+    each API has a page, new error codes are in troubleshooting, and its
+    `check_docs.py` passes.
 
 
 ## 25. Practical implementation order
@@ -131,7 +134,8 @@ For a new feature, implement in this order:
 9.  **Review security and reliability.** Check authorization,
     transactions, retries, timeouts, and logging.
 10. **Document the contract.** Update OpenAPI details, examples,
-    configuration, and operational notes.
+    configuration, and operational notes. Write the README and `docs/`
+    pages with the `fastapi-documentation` skill.
 
 The exact order can vary for exploratory work, but the final
 architecture should preserve the boundaries.
