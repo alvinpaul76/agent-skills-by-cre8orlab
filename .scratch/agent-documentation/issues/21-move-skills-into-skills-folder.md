@@ -27,4 +27,13 @@ copy installs (delete and copy again). The install steps there now use the
 mentions it under "The agent does not see my skill". The `voice-notify` plugin did
 not move.
 
+Documented the `npx skills` route: `docs/installation.md` has a new "Install with
+npx" section (list, install globally or per project, update, remove, and installing
+from a branch) and the README "Get started" leads with it. Tested with the `skills`
+CLI (1.7.2) in a throwaway home folder: the tool finds all five skills in
+`skills/` on the `develop` branch; `npx skills update -g` works from an unrelated
+folder; removing and re-adding a skill records the new `skills/<name>/SKILL.md`
+path. Not tested: updating an install made before the move, because that needs the
+move on `main`, the branch the tool reads. The docs give a reinstall fallback.
+
 ## Comments

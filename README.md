@@ -26,18 +26,18 @@ Claude Code.
 
 ## Get started
 
-1. Clone the repository:
+The quickest way is `npx` (needs Node.js, no clone):
 
-   ```bash
-   git clone https://github.com/alvinpaul76/agent-skills-by-cre8orlab.git
-   ```
+```bash
+npx skills add alvinpaul76/agent-skills-by-cre8orlab -g --skill fastapi-standards
+npx skills update -g    # later: refresh installed skills, from any folder
+```
 
-2. Copy or symlink the skill folders you want from `skills/` into your agent's
-   skills directory. Where that directory lives depends on the agent; see
-   [installing skills](docs/installation.md).
+Prefer to install by hand (clone, then copy or symlink a folder from `skills/`)? See
+[installing skills](docs/installation.md).
 
-Already installed a skill from an earlier version? Skills now live in the `skills/`
-folder, so a symlink you made before will no longer work. See
+Installed an earlier version? Skills now live in `skills/`, so hand-made symlinks
+break and `npx` installs may need a reinstall. See
 [updating an existing install](docs/installation.md#updating-an-existing-install).
 
 ## Docs
