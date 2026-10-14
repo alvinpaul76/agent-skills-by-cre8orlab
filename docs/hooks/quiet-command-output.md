@@ -26,7 +26,8 @@ Then restart Claude Code and check `/hooks`. To try a branch first, add
 The installer copies the script to `~/.claude/hooks/` and adds one entry to
 `~/.claude/settings.json`. It merges instead of replacing, backs up settings
 before changing them, and leaves your other hooks alone. `uninstall` removes only
-its own entry and script.
+the entry the installer wrote (matched by its exact command, whatever its
+matcher) and the script.
 
 ## What does it do?
 
@@ -43,15 +44,16 @@ you and prints a short result:
 - The exit code is kept either way.
 
 Anything else is left alone: `git`, file reads, commands with pipes, `;`, `&&`,
-redirects, `$` variables, `sudo`, or interactive flags.
+redirects, `$` variables, `sudo`, or interactive words (`--interactive`, `-i`, `--watch`, `watch`, `login`).
 
 ## Things to know
 
 - **Permission prompts.** Claude Code checks permission rules against the changed
   command, not the one the agent wrote. A rule like `Bash(npm install:*)` will not
   match, so you may be asked to approve. To skip that, add
-  `Bash(/usr/bin/python3 *quiet-command-output.py --run-b64 *)` to your `allow`
-  rules. The script only runs listed command families.
+  `Bash(<python> *quiet-command-output.py --run-b64 *)` to your `allow` rules,
+  where `<python>` is the path printed by `which python3` (the hook uses the
+  Python it was started with). The script only runs listed command families.
 - **No live output.** Output appears when the command finishes, so a long build
   shows nothing meanwhile.
 - **Rough matching.** The error and summary patterns are heuristics. If a tool uses

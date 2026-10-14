@@ -11,6 +11,9 @@
     "type": "git",
     "url": "git+https://github.com/alvinpaul76/agent-skills-by-cre8orlab.git"
   },
+  "scripts": {
+    "test": "node --test test/*.test.js && python3 -m unittest discover -s test -p '*_test.py'"
+  },
   "engines": {
     "node": ">=18"
   }

@@ -38,6 +38,9 @@ ELIGIBLE_PREFIXES = (
     "go build", "go test",
 )
 
+# Whole words that mark a command as interactive or long-running.
+INTERACTIVE_WORDS = {"--interactive", "-i", "--watch", "watch", "login"}
+
 # Shell syntax that makes transparent wrapping too risky. Fail open instead.
 UNSAFE_SYNTAX = re.compile(r"[\n\r|;&<>`]")
 UNSAFE_SUBSHELL = re.compile(r"\$\s*\(")
@@ -74,7 +77,7 @@ def eligible(command: str) -> bool:
     if "$" in cmd or cmd.startswith(("sudo ", "env ", "time ", "nohup ")):
         return False
     # Do not wrap likely interactive commands.
-    if any(x in cmd.lower() for x in ("--interactive", " -i", "login", "watch ")):
+    if INTERACTIVE_WORDS.intersection(cmd.lower().split()):
         return False
     for prefix in ELIGIBLE_PREFIXES:
         normalized = prefix.rstrip()
@@ -212,7 +215,8 @@ def run_mode(encoded: str) -> int:
             print(f"[quiet-command-output] Diagnostics were bounded to {len(chosen)} lines.")
         for line in chosen:
             print(line)
-    return proc.returncode
+    # A negative code means a signal killed the command; use the shell convention.
+    return proc.returncode if proc.returncode >= 0 else 128 - proc.returncode
 
 
 def main() -> int:

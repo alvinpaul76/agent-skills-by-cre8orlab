@@ -16,7 +16,7 @@ installable with `npx github:alvinpaul76/agent-skills-by-cre8orlab install quiet
   it up only when it changes, and is safe to run twice.
 - `docs/hooks/quiet-command-output.md`, plus pointers in `README.md`.
 - The `AGENTS.md`/`CLAUDE.md` restructure that shipped alongside is logged
-  separately in ticket 26.
+  separately in ticket 26. Review fixes are in ticket 27.
 - Dropped the bundled `SKILL.md` (it told the agent to build a hook the installer
   already ships) and the npm-publish flow.
 

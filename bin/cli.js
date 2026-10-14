@@ -65,9 +65,15 @@ function writeSettings(settings) {
   fs.renameSync(temp, SETTINGS);
 }
 
-// A hook entry is ours when its command runs our script file.
+// A hook entry is ours only when its command is exactly the one we install.
 function isOurs(h, hook) {
-  return typeof h?.command === "string" && h.command.includes(hook.script);
+  return h?.command === hook.command;
+}
+
+function hasOurs(settings, hook) {
+  const entries = settings?.hooks?.[hook.event];
+  return Array.isArray(entries) && entries.some(e =>
+    Array.isArray(e.hooks) && e.hooks.some(h => isOurs(h, hook)));
 }
 
 function isConfigured(settings, hook) {
@@ -115,7 +121,7 @@ function uninstall(name) {
   const entries = settings?.hooks?.[hook.event];
   let settingsBackup = null;
 
-  if (Array.isArray(entries) && isConfigured(settings, hook)) {
+  if (hasOurs(settings, hook)) {
     const kept = entries
       .map(e => Array.isArray(e.hooks) ? { ...e, hooks: e.hooks.filter(h => !isOurs(h, hook)) } : e)
       .filter(e => !Array.isArray(e.hooks) || e.hooks.length > 0);
