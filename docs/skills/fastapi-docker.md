@@ -20,7 +20,7 @@ exits or fails health checks. It also triggers when you ask to "deploy this" or
 | --- | --- |
 | `SKILL.md` | Base-image choices, non-negotiable rules, hardening checklist |
 | `references/dockerfile.md` | A production multi-stage Dockerfile, `.dockerignore`, BuildKit secrets, healthcheck |
-| `references/compose.md` | Compose file with app, migrate, and Postgres services; dev override; `.env` pitfalls |
+| `references/compose.md` | Compose file with app, migrate, and Postgres services; dev override; `.env` pitfalls. Compose files are named `docker-compose*.yml` |
 | `references/security-scanning.md` | Scanning the built image, triaging findings by source, CI gating |
 
 ## How does it work inside?

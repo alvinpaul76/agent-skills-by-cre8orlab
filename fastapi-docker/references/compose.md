@@ -10,7 +10,7 @@
 
 ## Base compose file
 
-`compose.yaml` describes the production-like topology. It runs without bind
+`docker-compose.yml` describes the production-like topology. It runs without bind
 mounts or `--reload`, so it is a realistic test of the built image.
 
 ```yaml
@@ -197,8 +197,8 @@ by excluding `database_password` from the model's representation with
 
 ## Development override
 
-`compose.override.yaml` is loaded automatically by `docker compose up` on top
-of `compose.yaml`. It adds hot reload and source mounts for local work. Do not
+`docker-compose.override.yml` is loaded automatically by `docker compose up` on top
+of `docker-compose.yml`. It adds hot reload and source mounts for local work. Do not
 use it in staging or production.
 
 ```yaml
