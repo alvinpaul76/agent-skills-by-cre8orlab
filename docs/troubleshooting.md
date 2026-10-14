@@ -11,7 +11,7 @@ New to a word? See the [word list](glossary.md).
 | The folder is in a directory the agent scans | Compare your path against the table in [installation](installation.md). The skill must sit at `<skills-dir>/<name>/SKILL.md`, not a level deeper or shallower. |
 | The folder is named after the skill | The directory name should match the `name` in the frontmatter. |
 | The agent was restarted | Many agents scan for skills when a session starts. Open a new session. |
-| A symlink resolves | Run `ls <skills-dir>/<name>/SKILL.md`. If it fails, the link target moved — recreate the link. |
+| A symlink resolves | Run `ls <skills-dir>/<name>/SKILL.md`. If it fails, the link target moved — recreate the link. Skills used to sit at the top of this repository and now live in `skills/`; see [updating an existing install](installation.md#updating-an-existing-install). |
 
 ## The skill exists but never triggers
 

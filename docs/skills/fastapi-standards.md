@@ -4,7 +4,7 @@ Engineering standards for building, reviewing, and refactoring FastAPI services
 with a layered architecture (routes, use cases, domain, infrastructure).
 
 New to a word? See the [word list](../glossary.md). · skill folder:
-[`fastapi-standards/`](../../fastapi-standards/)
+[`fastapi-standards/`](../../skills/fastapi-standards/)
 
 ## When does the agent use it?
 

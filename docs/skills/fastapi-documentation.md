@@ -4,7 +4,7 @@ Writes documentation for a FastAPI service that people who are not developers �
 product owners, support, testers, new teammates — can understand and use.
 
 New to a word? See the [word list](../glossary.md). · skill folder:
-[`fastapi-documentation/`](../../fastapi-documentation/)
+[`fastapi-documentation/`](../../skills/fastapi-documentation/)
 
 ## When does the agent use it?
 

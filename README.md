@@ -17,22 +17,28 @@ task calls for it.
 | fastapi-docker | Container, deployment, and image-scanning standards for FastAPI services | [fastapi-docker](docs/skills/fastapi-docker.md) |
 | fastapi-documentation | Writes plain-language docs that non-developers can follow | [fastapi-documentation](docs/skills/fastapi-documentation.md) |
 | agent-documentation | Writes plain-language docs for agent skills and plugins | [agent-documentation](docs/skills/agent-documentation.md) |
+| context-audit | Read-only audit of Claude Code token cost: instruction files, MCP tools, model, hooks, subagents, scheduled jobs, and prompt-cache behavior | [context-audit](docs/skills/context-audit.md) |
 
-Each page explains when the skill triggers and what is inside it.
+Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
+triggers and what is inside it.
 The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin for
 Claude Code.
 
 ## Get started
 
-1. Clone the repository:
+The quickest way is `npx` (needs Node.js, no clone):
 
-   ```bash
-   git clone https://github.com/alvinpaul76/agent-skills-by-cre8orlab.git
-   ```
+```bash
+npx skills add alvinpaul76/agent-skills-by-cre8orlab -g --skill fastapi-standards
+npx skills update -g    # later: refresh installed skills, from any folder
+```
 
-2. Copy or symlink the skill folders you want into your agent's skills directory.
-   Where that directory lives depends on the agent; see
-   [installing skills](docs/installation.md).
+Prefer to install by hand (clone, then copy or symlink a folder from `skills/`)? See
+[installing skills](docs/installation.md).
+
+Installed an earlier version? Skills now live in `skills/`, so hand-made symlinks
+break and `npx` installs may need a reinstall. See
+[updating an existing install](docs/installation.md#updating-an-existing-install).
 
 ## Docs
 

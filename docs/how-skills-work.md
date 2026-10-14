@@ -44,20 +44,24 @@ you get work that follows the skill's standards
 
 ```text
 .
-├── fastapi-standards/          architecture and code standards for FastAPI services
-│   ├── SKILL.md                the file the agent reads first
-│   └── references/             detailed standards, read on demand
-├── fastapi-docker/             container and deployment standards for FastAPI
-│   ├── SKILL.md
-│   └── references/
-├── fastapi-documentation/      plain-language documentation workflow
-│   ├── SKILL.md
-│   ├── references/
-│   └── scripts/check_docs.py   a docs checker the skill runs
-├── agent-documentation/        plain-language docs for skills and plugins
-│   ├── SKILL.md
-│   ├── references/
-│   └── scripts/check_docs.py   checks every skill and plugin has a page
+├── skills/                     every skill, one folder each
+│   ├── fastapi-standards/      architecture and code standards for FastAPI services
+│   │   ├── SKILL.md            the file the agent reads first
+│   │   └── references/         detailed standards, read on demand
+│   ├── fastapi-docker/         container and deployment standards for FastAPI
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── fastapi-documentation/  plain-language documentation workflow
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   └── scripts/check_docs.py   a docs checker the skill runs
+│   ├── agent-documentation/    plain-language docs for skills and plugins
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   └── scripts/check_docs.py   checks every skill and plugin has a page
+│   └── context-audit/          read-only audit of Claude Code context and token cost
+│       ├── SKILL.md
+│       └── scripts/analyze_session.py   summarizes a session log's token usage
 ├── plugins/voice-notify/       a Claude Code plugin (not a skill): spoken alerts
 ├── .claude-plugin/             marketplace listing for the plugin
 └── docs/                       these pages

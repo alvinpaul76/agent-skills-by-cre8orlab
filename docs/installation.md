@@ -10,7 +10,41 @@ An agent discovers skills by scanning specific folders on your machine or in you
 project. Installing a skill means putting its folder in one of those places, either
 as a copy or as a link back to this repository.
 
-## How do I install a skill?
+## Install with npx (no clone needed)
+
+The `skills` command-line tool installs a skill straight from GitHub and records
+where it came from, so you can update it later with one command. It needs
+[Node.js](https://nodejs.org) but nothing else.
+
+```bash
+# See what is available
+npx skills add alvinpaul76/agent-skills-by-cre8orlab --list
+
+# Install one skill for every project on your machine (-g = global)
+npx skills add alvinpaul76/agent-skills-by-cre8orlab -g --skill fastapi-standards
+
+# Install it into the current project only (leave out -g)
+npx skills add alvinpaul76/agent-skills-by-cre8orlab --skill fastapi-standards
+```
+
+Use `-a claude-code` to pick one agent, or leave it out to let the tool detect the
+agents you have. See what is installed with `npx skills list -g` (or without `-g` for
+the current project).
+
+**Update:** `npx skills update -g` checks every global skill against GitHub and
+refreshes the ones that changed. A global update works the same from any folder, so
+you do not need to `cd` anywhere first. Always pass `-g` for global skills: without
+it the tool asks which scope you mean (or, with `-y`, picks project skills when
+you are inside a project folder), and project skills are looked up relative to the
+folder you are in.
+
+**Remove:** `npx skills remove -g fastapi-standards`.
+
+The tool reads the repository's default branch. To try a branch before it is merged,
+add `#branch-name` to the source, for example
+`alvinpaul76/agent-skills-by-cre8orlab#develop`.
+
+## How do I install a skill by hand?
 
 1. Clone the repository if you have not already:
 
@@ -23,14 +57,15 @@ as a copy or as a link back to this repository.
    skill with your team through git, or a **global** location to use it in every
    project on your machine.
 
-3. Copy or symlink the skill folder into that location:
+3. Copy or symlink the skill folder from the repo's `skills/` directory into that
+   location:
 
    ```bash
    # Symlink: edits in the repo take effect immediately (recommended)
-   ln -s "$(pwd)/fastapi-standards" ~/.agents/skills/fastapi-standards
+   ln -s "$(pwd)/skills/fastapi-standards" ~/.agents/skills/fastapi-standards
 
    # Or copy: a frozen snapshot that will not change with the repo
-   cp -r fastapi-standards ~/.agents/skills/fastapi-standards
+   cp -r skills/fastapi-standards ~/.agents/skills/fastapi-standards
    ```
 
 4. Restart the agent or start a new session if it does not pick up the new skill on
@@ -69,3 +104,64 @@ If the skill does not appear, see [troubleshooting](troubleshooting.md).
   do. With a copy, repeat the `cp -r` command from step 3.
 - **Remove:** delete the copied folder or the symlink inside the agent's skills
   directory. Removing a symlink never touches this repository.
+
+## Updating an existing install
+
+All skills moved from the top of the repository into a `skills/` folder, the same
+way plugins live in `plugins/`. The skills themselves did not change.
+
+**You installed with `npx skills`.** The tool remembers each skill's old path inside
+the repository. Once the move reaches the default branch, run:
+
+```bash
+npx skills update -g
+```
+
+If it says everything is up to date but you want to be sure, or a skill stops
+loading, reinstall it. This always works, because the tool searches the `skills/`
+folder:
+
+```bash
+npx skills remove -g fastapi-standards
+npx skills add alvinpaul76/agent-skills-by-cre8orlab -g --skill fastapi-standards
+```
+
+**You installed by hand.** First pull the new layout:
+
+```bash
+cd agent-skills-by-cre8orlab
+git pull
+```
+
+Then follow the case that matches how you copied it.
+
+**You installed with a symlink.** The link still points at the old folder, which no
+longer exists, so the skill has quietly stopped loading. Recreate each link. This
+example uses `~/.claude/skills`; swap in your own skills directory:
+
+```bash
+for s in fastapi-standards fastapi-docker fastapi-documentation agent-documentation context-audit; do
+  ln -sfn "$(pwd)/skills/$s" ~/.claude/skills/$s
+done
+```
+
+`-sfn` replaces the old link in place. Skip any skill you never installed.
+
+**You installed with a copy.** Nothing broke, but the copy does not change when the
+repository does. To refresh it, delete the old copy and copy again from the new
+location:
+
+```bash
+rm -rf ~/.claude/skills/fastapi-standards
+cp -r skills/fastapi-standards ~/.claude/skills/fastapi-standards
+```
+
+**Check it worked.** List the link and confirm it points into `skills/`:
+
+```bash
+ls -l ~/.claude/skills
+```
+
+Then start a new session and confirm the skill shows up (see
+[how do I check it worked](#how-do-i-check-it-worked)). The
+[voice-notify](plugins/voice-notify.md) plugin did not move, so it needs no change.

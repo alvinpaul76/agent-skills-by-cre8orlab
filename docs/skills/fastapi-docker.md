@@ -4,7 +4,7 @@ Container and deployment standards for FastAPI services: Dockerfiles, compose
 files, image security, and vulnerability scanning.
 
 New to a word? See the [word list](../glossary.md). · skill folder:
-[`fastapi-docker/`](../../fastapi-docker/)
+[`fastapi-docker/`](../../skills/fastapi-docker/)
 
 ## When does the agent use it?
 

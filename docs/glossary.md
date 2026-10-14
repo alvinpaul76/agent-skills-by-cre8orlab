@@ -22,5 +22,7 @@ The terms these docs use, in plain words.
 | Hook | A small action the editor runs automatically when something happens, such as the agent finishing a turn. |
 | MCP server | A helper program that gives the agent extra tools it can call. |
 | Token | The unit an AI model is billed and limited by; roughly a few characters of text. |
+| Prompt cache | Saved, already-processed prompt text that the model provider reuses on the next request so it is faster and cheaper. Changing the start of the prompt (or waiting too long) throws it away. |
+| Context | Everything the model reads on one turn: instructions, tool descriptions, and the conversation so far. |
 | LLM | The AI language model behind an agent. |
 | Slash command | A command typed with a leading `/` that starts a skill or action by name. |

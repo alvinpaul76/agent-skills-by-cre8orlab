@@ -4,7 +4,7 @@ Writes documentation for agent skills and plugins that people who are not develo
 can understand, install, and use.
 
 New to a word? See the [word list](../glossary.md). · skill folder:
-[`agent-documentation/`](../../agent-documentation/)
+[`agent-documentation/`](../../skills/agent-documentation/)
 
 ## When does the agent use it?
 
