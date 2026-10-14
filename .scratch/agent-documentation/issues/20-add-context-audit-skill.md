@@ -18,3 +18,6 @@ Skills table in `README.md`, added the folder to the layout tree in
 `docs/glossary.md`.
 
 ## Comments
+
+Output format changed to tables in issue 22: the helper script prints Markdown
+tables and the report table is numbered with severity markers.

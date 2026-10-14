@@ -11,13 +11,20 @@ Run a **read-only, evidence-based audit** of the current Claude Code environment
 
 Gather all evidence silently, then return exactly one Markdown table, sorted by estimated/observed cost impact from highest to lowest:
 
-| FINDING | SEVERITY | EVIDENCE | WHAT IT IS COSTING ME |
-|---|---|---|---|
+| # | Severity | Finding | Evidence | What it is costing me |
+|--:|:--:|---|---|---|
+| 1 | 🔴 RED | **CLAUDE.md is oversized** | `~/.claude/CLAUDE.md`: 31,204 bytes | Loaded every turn (inference) |
 
-Allowed severity values: `RED`, `AMBER`, `GREEN`.
+Formatting, so the table is easy to scan:
+- Number rows from 1 in ranked order, and lead each severity cell with its marker: `🔴 RED`, `🟡 AMBER`, `🟢 GREEN`. Use `⚪ UNKNOWN` for rows that could not be measured.
+- Bold the finding name, put paths and literal settings in backticks, and keep each cell to one short line. Move long detail into the cost cell as a brief clause rather than extra sentences.
+- Thousands separators on numbers (`112,304`), and keep each unit explicit (bytes, tokens, %).
+- Keep the plain words `RED`, `AMBER`, `GREEN`, `UNKNOWN` next to the markers so the table still reads without emoji.
 
-After the table, print exactly one final line:
-`Highest-leverage change: <one specific change supported by the evidence>`
+Allowed severity values: `RED`, `AMBER`, `GREEN` (plus `UNKNOWN` when unmeasurable).
+
+After the table, print exactly one final line, in bold:
+`**Highest-leverage change:** <one specific change supported by the evidence>`
 
 No introduction or extra sections. The only permitted exception is a request for the user to paste `/context` or `/usage` output when it is needed and cannot be obtained otherwise; if the rest of the audit is complete, still deliver the table and mark the affected rows `UNKNOWN`. If there is no evidence to rank a cost, say `UNKNOWN` and rank it after measurable findings. Evidence must be a numeric measurement, a literal setting/value, or a file path—not an adjective. Distinguish observed facts from inferences in the finding/cost text.
 
@@ -110,7 +117,7 @@ Use the included helper script if Python 3 is available. `--latest` picks the ne
 
 Note that the newest log may be the current audit session itself; say so, and ask for or locate the previous log if the user wants a past session audited.
 
-Claude Code writes one record per content block, so one API response can span several lines that repeat the same usage. The helper merges records by message id (reporting how many it merged) so totals are not inflated. It is read-only and reports per-message usage values for:
+Claude Code writes one record per content block, so one API response can span several lines that repeat the same usage. The helper prints Markdown tables and merges records by message id (reporting how many it merged) so totals are not inflated. It is read-only and reports per-message usage values for:
 - `cache_read_input_tokens`
 - `cache_creation_input_tokens`
 - `input_tokens`
