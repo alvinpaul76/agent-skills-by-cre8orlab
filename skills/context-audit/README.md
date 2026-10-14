@@ -25,8 +25,9 @@ asks you to paste their output and marks anything it cannot measure `UNKNOWN`.
 
 ## Output
 
-A Markdown table (`FINDING | SEVERITY | EVIDENCE | WHAT IT IS COSTING ME`) sorted by
-cost impact, then `Highest-leverage change: ...`. Severity is `RED`, `AMBER`, or `GREEN`.
+A ranked Markdown table (`# | Severity | Finding | Evidence | What it is costing me`) sorted by
+cost impact, with 🔴 RED / 🟡 AMBER / 🟢 GREEN markers, then a bold
+`Highest-leverage change: ...` line.
 
 ## Session usage helper
 
@@ -41,7 +42,7 @@ python3 ~/.claude/skills/context-audit/scripts/analyze_session.py \
   --input "/path/to/session.jsonl" --max-rows 50
 ```
 
-It reports:
+It prints Markdown tables and reports:
 
 - aggregate cache read / cache creation / input / output tokens and percentages
 - cache hit rate (cache read divided by prompt tokens)

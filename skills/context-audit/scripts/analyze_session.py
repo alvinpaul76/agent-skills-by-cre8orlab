@@ -120,71 +120,87 @@ def main():
         print(f"ERROR: cannot read log: {exc}", file=sys.stderr)
         return 2
 
-    print(f"FILE: {path}")
-    print(f"NEWEST_BY: {'mtime of */*.jsonl under ' + args.projects_dir if args.latest else 'n/a (--input)'}")
-    print(f"ASSISTANT_MESSAGES_WITH_USAGE: {len(rows)} (unique message ids)")
-    print(f"DUPLICATE_RECORDS_MERGED: {stats['duplicate_records']}")
-    print(f"ASSISTANT_MESSAGES_MISSING_USAGE: {stats['missing_usage']}")
-    print(f"MALFORMED_JSONL_LINES: {stats['malformed']}")
-    print(f"NON_ASSISTANT_RECORDS: {stats['other']}")
-    print(f"SIDECHAIN_(SUBAGENT)_MESSAGES: {stats['sidechain']}")
-    print("DENOMINATOR: cache_read + cache_creation + input + output tokens")
-    print("NOTE: token-accounting volume, not billed cost. CONTEXT = cache_read + "
-          "cache_creation + input (the prompt size the model saw).")
+    def table(headers, body, align=None):
+        align = align or ["---"] * len(headers)
+        print("| " + " | ".join(headers) + " |")
+        print("| " + " | ".join(align) + " |")
+        for row in body:
+            print("| " + " | ".join(str(c) for c in row) + " |")
+
+    newest = f"mtime of */*.jsonl under {args.projects_dir}" if args.latest else "n/a (--input)"
+    print("## Session log\n")
+    table(["Item", "Value"], [
+        ["File", f"`{path}`"],
+        ["Newest by", newest],
+        ["Assistant messages with usage", f"{len(rows)} (unique message ids)"],
+        ["Duplicate records merged", stats["duplicate_records"]],
+        ["Assistant messages missing usage", stats["missing_usage"]],
+        ["Malformed JSONL lines", stats["malformed"]],
+        ["Non-assistant records", stats["other"]],
+        ["Sidechain (subagent) messages", stats["sidechain"]],
+    ])
+    print("\n> Percentages use cache_read + cache_creation + input + output as the denominator: "
+          "token-accounting volume, not billed cost. Context = cache_read + cache_creation + input "
+          "(the prompt size the model saw).")
 
     totals = {f: sum(r[f] for r in rows) for f in FIELDS}
     grand = sum(totals.values())
     prompt_total = grand - totals["output_tokens"]
-    print("\nAGGREGATE")
-    for f in FIELDS:
-        print(f"{f}: {totals[f]} ({pct(totals[f], grand)})")
-    print(f"TOTAL_ACCOUNTING_TOKENS: {grand}")
-    print(f"CACHE_HIT_RATE (cache_read / prompt tokens): {pct(totals['cache_read_input_tokens'], prompt_total)}")
+    print("\n## Aggregate\n")
+    table(["Token type", "Tokens", "Share"],
+          [[f, f"{totals[f]:,}", pct(totals[f], grand)] for f in FIELDS]
+          + [["**total**", f"**{grand:,}**", "100%" if grand else "UNKNOWN"]],
+          ["---", "---:", "---:"])
+    print(f"\n**Cache hit rate** (cache_read / prompt tokens): "
+          f"**{pct(totals['cache_read_input_tokens'], prompt_total)}**")
 
     models = {}
     for r in rows:
         models[r["model"]] = models.get(r["model"], 0) + 1
-    print("\nMODELS_SEEN (message counts)")
-    for model, count in sorted(models.items(), key=lambda kv: -kv[1]):
-        print(f"{model}: {count}")
+    print("\n## Models seen\n")
+    table(["Model", "Messages"], [[m, c] for m, c in sorted(models.items(), key=lambda kv: -kv[1])],
+          ["---", "---:"])
     if len(models) > 1:
-        print("NOTE: more than one model appears; switching models can invalidate the prompt cache.")
+        print("\n> More than one model appears; switching models can invalidate the prompt cache.")
 
     if not rows:
-        print("\nFIRST_ASSISTANT_MESSAGE_CONTEXT: UNKNOWN")
-        print("LAST_ASSISTANT_MESSAGE_CONTEXT: UNKNOWN")
+        print("\n## Context growth\n\nFirst/last assistant message context: UNKNOWN")
         return 0
 
     main_rows = [r for r in rows if not r["sidechain"]] or rows
     first, last = main_rows[0], main_rows[-1]
-    print("\nCONTEXT_GROWTH (main thread, excludes sidechains when present)")
-    print(f"first_context: {first['context']} (line {first['line']})")
-    print(f"last_context: {last['context']} (line {last['line']})")
-    print(f"peak_context: {max(r['context'] for r in main_rows)}")
+    print("\n## Context growth (main thread, excludes sidechains when present)\n")
+    table(["Point", "Context tokens", "Line"], [
+        ["First", f"{first['context']:,}", first["line"]],
+        ["Last", f"{last['context']:,}", last["line"]],
+        ["Peak", f"{max(r['context'] for r in main_rows):,}", ""],
+    ], ["---", "---:", "---:"])
 
     spikes = [r for r in main_rows[1:]
               if r["context"] and r["cache_creation_input_tokens"] / r["context"] > SPIKE_RATIO]
-    print(f"\nCACHE_CREATION_SPIKES (>{int(SPIKE_RATIO * 100)}% of a turn's context, "
-          f"excluding the first turn): {len(spikes)}")
-    for r in spikes[:10]:
-        print(f"line {r['line']}\t{r['timestamp']}\tcache_creation={r['cache_creation_input_tokens']}"
-              f"\tcontext={r['context']}\tmodel={r['model']}")
-    if len(spikes) > 10:
-        print(f"... {len(spikes) - 10} more")
+    print(f"\n## Cache-creation spikes: {len(spikes)}\n")
+    print(f"Turns where cache creation exceeded {int(SPIKE_RATIO * 100)}% of context, excluding the first turn.")
+    if spikes:
+        print()
+        table(["Line", "Timestamp", "Cache creation", "Context", "Model"],
+              [[r["line"], r["timestamp"], f"{r['cache_creation_input_tokens']:,}",
+                f"{r['context']:,}", r["model"]] for r in spikes[:10]],
+              ["---:", "---", "---:", "---:", "---"])
+        if len(spikes) > 10:
+            print(f"\n…and {len(spikes) - 10} more.")
 
     shown = rows[-args.max_rows:] if args.max_rows > 0 else rows
-    print("\nPER_ASSISTANT_MESSAGE")
-    print("line\tid\tside\tcache_read\tcache_creation\tinput\toutput\tcontext\tread%\tcreation%\tinput%\toutput%")
-    for r in shown:
-        print(
-            f"{r['line']}\t{r['id']}\t{'Y' if r['sidechain'] else 'N'}\t"
-            f"{r['cache_read_input_tokens']}\t{r['cache_creation_input_tokens']}\t"
-            f"{r['input_tokens']}\t{r['output_tokens']}\t{r['context']}\t"
-            f"{pct(r['cache_read_input_tokens'], r['total'])}\t"
-            f"{pct(r['cache_creation_input_tokens'], r['total'])}\t"
-            f"{pct(r['input_tokens'], r['total'])}\t"
-            f"{pct(r['output_tokens'], r['total'])}"
-        )
+    print("\n## Per assistant message\n")
+    table(["Line", "Id", "Side", "Cache read", "Cache creation", "Input", "Output", "Context",
+           "Read %", "Creation %", "Input %", "Output %"],
+          [[r["line"], r["id"], "Y" if r["sidechain"] else "N",
+            r["cache_read_input_tokens"], r["cache_creation_input_tokens"],
+            r["input_tokens"], r["output_tokens"], r["context"],
+            pct(r["cache_read_input_tokens"], r["total"]),
+            pct(r["cache_creation_input_tokens"], r["total"]),
+            pct(r["input_tokens"], r["total"]),
+            pct(r["output_tokens"], r["total"])] for r in shown],
+          ["---:", "---", "---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:"])
     return 0
 
 
