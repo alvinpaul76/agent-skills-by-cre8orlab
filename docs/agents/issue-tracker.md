@@ -11,6 +11,7 @@ Issues and specs for this repo live as markdown files in `.scratch/`.
 - Comments and conversation history append to the bottom of the file under a `## Comments` heading
 - `## Answer` sections describe the implemented change (what was added or altered and where), not commit hashes or PR numbers — git already records those
 - Use plain words in titles and filename slugs — no jargon (write `test-the-skill`, not `dogfood-the-skill`)
+- Every change to the repo is logged: the ticket ships in the same commit as the change, starting as `needs-triage` for proposed work and `resolved` (with an `## Answer` describing the change) for finished work
 
 ## When a skill says "publish to the issue tracker"
 
