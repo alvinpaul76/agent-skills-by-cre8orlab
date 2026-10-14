@@ -19,7 +19,8 @@ task calls for it.
 | agent-documentation | Writes plain-language docs for agent skills and plugins | [agent-documentation](docs/skills/agent-documentation.md) |
 | context-audit | Read-only audit of Claude Code token cost: instruction files, MCP tools, model, hooks, subagents, scheduled jobs, and prompt-cache behavior | [context-audit](docs/skills/context-audit.md) |
 
-Each page explains when the skill triggers and what is inside it.
+Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
+triggers and what is inside it.
 The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin for
 Claude Code.
 
@@ -31,9 +32,13 @@ Claude Code.
    git clone https://github.com/alvinpaul76/agent-skills-by-cre8orlab.git
    ```
 
-2. Copy or symlink the skill folders you want into your agent's skills directory.
-   Where that directory lives depends on the agent; see
+2. Copy or symlink the skill folders you want from `skills/` into your agent's
+   skills directory. Where that directory lives depends on the agent; see
    [installing skills](docs/installation.md).
+
+Already installed a skill from an earlier version? Skills now live in the `skills/`
+folder, so a symlink you made before will no longer work. See
+[updating an existing install](docs/installation.md#updating-an-existing-install).
 
 ## Docs
 

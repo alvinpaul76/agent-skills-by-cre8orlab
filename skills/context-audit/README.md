@@ -12,7 +12,7 @@ mkdir -p ~/.claude/skills
 cp -R context-audit ~/.claude/skills/
 ```
 
-If you extracted this bundle elsewhere, replace `context-audit` with its actual path.
+Run this from the `skills/` folder of the repository. If you extracted this bundle elsewhere, replace `context-audit` with its actual path.
 Restart Claude Code if needed, then run:
 
 ```text

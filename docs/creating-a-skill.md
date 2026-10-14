@@ -6,8 +6,8 @@ New to a word? See the [word list](glossary.md).
 
 ## Steps
 
-1. **Create a folder named after the skill**, using lowercase with hyphens, for
-   example `postgres-migrations/`.
+1. **Create a folder named after the skill** inside `skills/`, using lowercase with
+   hyphens, for example `skills/postgres-migrations/`.
 
 2. **Write `SKILL.md`** inside it. Start with the frontmatter — the metadata the
    agent reads to decide when the skill applies:

@@ -5,7 +5,7 @@ It looks at the places cost usually hides and gives you one ranked table plus a
 single change worth making first.
 
 New to a word? See the [word list](../glossary.md). · skill folder:
-[`context-audit/`](../../context-audit/)
+[`context-audit/`](../../skills/context-audit/)
 
 ## When does the agent use it?
 

@@ -23,14 +23,15 @@ as a copy or as a link back to this repository.
    skill with your team through git, or a **global** location to use it in every
    project on your machine.
 
-3. Copy or symlink the skill folder into that location:
+3. Copy or symlink the skill folder from the repo's `skills/` directory into that
+   location:
 
    ```bash
    # Symlink: edits in the repo take effect immediately (recommended)
-   ln -s "$(pwd)/fastapi-standards" ~/.agents/skills/fastapi-standards
+   ln -s "$(pwd)/skills/fastapi-standards" ~/.agents/skills/fastapi-standards
 
    # Or copy: a frozen snapshot that will not change with the repo
-   cp -r fastapi-standards ~/.agents/skills/fastapi-standards
+   cp -r skills/fastapi-standards ~/.agents/skills/fastapi-standards
    ```
 
 4. Restart the agent or start a new session if it does not pick up the new skill on
@@ -69,3 +70,48 @@ If the skill does not appear, see [troubleshooting](troubleshooting.md).
   do. With a copy, repeat the `cp -r` command from step 3.
 - **Remove:** delete the copied folder or the symlink inside the agent's skills
   directory. Removing a symlink never touches this repository.
+
+## Updating an existing install
+
+All skills moved from the top of the repository into a `skills/` folder, the same
+way plugins live in `plugins/`. The skills themselves did not change.
+
+First pull the new layout:
+
+```bash
+cd agent-skills-by-cre8orlab
+git pull
+```
+
+Then follow the case that matches how you installed.
+
+**You installed with a symlink.** The link still points at the old folder, which no
+longer exists, so the skill has quietly stopped loading. Recreate each link. This
+example uses `~/.claude/skills`; swap in your own skills directory:
+
+```bash
+for s in fastapi-standards fastapi-docker fastapi-documentation agent-documentation context-audit; do
+  ln -sfn "$(pwd)/skills/$s" ~/.claude/skills/$s
+done
+```
+
+`-sfn` replaces the old link in place. Skip any skill you never installed.
+
+**You installed with a copy.** Nothing broke, but the copy does not change when the
+repository does. To refresh it, delete the old copy and copy again from the new
+location:
+
+```bash
+rm -rf ~/.claude/skills/fastapi-standards
+cp -r skills/fastapi-standards ~/.claude/skills/fastapi-standards
+```
+
+**Check it worked.** List the link and confirm it points into `skills/`:
+
+```bash
+ls -l ~/.claude/skills
+```
+
+Then start a new session and confirm the skill shows up (see
+[how do I check it worked](#how-do-i-check-it-worked)). The
+[voice-notify](plugins/voice-notify.md) plugin did not move, so it needs no change.

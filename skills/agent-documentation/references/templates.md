@@ -50,7 +50,7 @@ Keep the heading text; the checker reads "What is inside?".
 
 <One sentence: what the skill does and for whom.>
 
-New to a word? See the [word list](../glossary.md). · skill folder: [`<name>/`](../../<name>/)
+New to a word? See the [word list](../glossary.md). · skill folder: [`<name>/`](../../skills/<name>/)
 
 ## When does the agent use it?
 <Paraphrase the frontmatter description: the tasks and phrases that trigger it.>
