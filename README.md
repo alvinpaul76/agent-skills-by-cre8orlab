@@ -21,8 +21,8 @@ task calls for it.
 
 Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
 triggers and what is inside it.
-The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin for
-Claude Code.
+The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin and the
+[quiet-command-output](docs/hooks/quiet-command-output.md) hook for Claude Code.
 
 ## Get started
 
@@ -31,6 +31,12 @@ The quickest way is `npx` (needs Node.js, no clone):
 ```bash
 npx skills add alvinpaul76/agent-skills-by-cre8orlab -g --skill fastapi-standards
 npx skills update -g    # later: refresh installed skills, from any folder
+```
+
+Hooks install the same way, with the repo's own command:
+
+```bash
+npx github:alvinpaul76/agent-skills-by-cre8orlab install quiet-command-output
 ```
 
 Prefer to install by hand (clone, then copy or symlink a folder from `skills/`)? See
