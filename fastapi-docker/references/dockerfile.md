@@ -177,7 +177,7 @@ build/
 tests/
 docs/
 *.md
-compose*.yml
+docker-compose*.yml
 Dockerfile*
 .dockerignore
 

@@ -139,8 +139,11 @@ Read `references/compose.md` for the full file. The key properties:
   you need local tools to connect, and bind it to `127.0.0.1`.
 - Use a named volume for database data.
 - The dev override (bind mounts, `--reload`) lives in a separate
-  `compose.override.yml` or `compose.dev.yml`. Production-like runs use the
-  base file alone.
+  `docker-compose.override.yml` or `docker-compose.dev.yml`. Production-like
+  runs use the base file alone.
+- Name the base compose file `docker-compose.yml`. Any additional compose file
+  is prefixed with `docker-compose.` (for example `docker-compose.override.yml`,
+  `docker-compose.prod.yml`). Always use the `.yml` extension, never `.yaml`.
 
 ## Hardening checklist
 
