@@ -1,0 +1,6 @@
+{
+  "event": "PreToolUse",
+  "matcher": "Bash",
+  "script": "quiet-command-output.py",
+  "args": "--hook"
+}

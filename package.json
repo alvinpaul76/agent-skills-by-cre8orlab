@@ -1,0 +1,17 @@
+{
+  "name": "agent-skills-by-cre8orlab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skills, plugins, and Claude Code hooks by Cre8or Lab. The bin installs hooks from hooks/.",
+  "license": "MIT",
+  "bin": {
+    "cre8orlab-hooks": "bin/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alvinpaul76/agent-skills-by-cre8orlab.git"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
