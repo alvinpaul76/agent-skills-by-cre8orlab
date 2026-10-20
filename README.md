@@ -21,8 +21,9 @@ task calls for it.
 
 Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
 triggers and what is inside it.
-The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin and the
-[quiet-command-output](docs/hooks/quiet-command-output.md) hook for Claude Code.
+The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin and two
+hooks for Claude Code: [quiet-command-output](docs/hooks/quiet-command-output.md) and
+[docs-drift-reminder](docs/hooks/docs-drift-reminder.md).
 
 ## Get started
 

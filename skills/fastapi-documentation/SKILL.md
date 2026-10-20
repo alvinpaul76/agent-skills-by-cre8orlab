@@ -97,13 +97,19 @@ request and response examples.
 
 ### 7. Check
 
-Run the checker, then do the reading test.
+Run both checkers, then do the reading test.
 
 ```bash
 python <skill-dir>/scripts/check_docs.py <repo-root>
+# Drift check: run with the PROJECT's Python so the app can be imported.
+uv run python <skill-dir>/scripts/check_drift.py <repo-root> --app app.main:create_app
 ```
 
-It fails on broken links or heading anchors, an API page the README does not link to,
+`check_drift.py` compares the docs with the code: every route, settings field and error
+code must be documented, and nothing documented may be gone. Fix each `DRIFT` line by
+updating the page named in it (or the code, if the docs were right).
+
+`check_docs.py` fails on broken links or heading anchors, an API page the README does not link to,
 unbalanced code fences, pages without a title and purpose
 line, and text that looks like a real secret. It warns about developer jargon: for
 each warning, explain the term in place or add it to the glossary.
@@ -114,6 +120,31 @@ Reading test, answered by rereading as a newcomer would:
 - Could I do the first task by following the steps exactly?
 - Does each example match what the code really returns?
 - Does the README tell me what the project is for and list every API, without teaching one API?
+
+## Updating docs after a code change
+
+When the docs already exist, do not start from step 1. Find what changed, then touch
+only the pages it affects.
+
+1. Run `check_drift.py` (step 7). Its `DRIFT` lines are the to-do list.
+2. Also look at what changed since the docs were last updated:
+   `git log -1 --format=%H -- docs/` gives that commit, then
+   `git diff <that-commit> -- app/` shows the code changes. A FastAPI upgrade
+   (check `uv.lock` or `pyproject.toml`) can change behavior without touching `app/`:
+   re-run the real examples and compare with the pages.
+3. Use this table to find the pages to edit:
+
+| Code change | Pages to update |
+|---|---|
+| New or removed router or route | The `docs/apis/<feature>.md` page, the README APIs table |
+| New or changed setting | Settings table in `architecture.md`, `.env.example`, `docker-compose.yml`, `deployment.md` if it affects production |
+| New error class or `code` | `troubleshooting.md` (code table), the API page's "What can go wrong?" |
+| Changed limit or default | Only the page that owns it (rule: facts live once) |
+| New system program or dependency | README "Get it running", `deployment.md` or the Dockerfile notes |
+| New term in the docs | `glossary.md` |
+
+4. Re-run any example whose route or answer changed, and paste the new real output.
+5. Run both checkers again.
 
 ## Rules
 

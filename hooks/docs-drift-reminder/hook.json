@@ -1,0 +1,6 @@
+{
+  "event": "PostToolUse",
+  "matcher": "Edit|Write",
+  "script": "docs-drift-reminder.py",
+  "args": "--hook"
+}
