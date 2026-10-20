@@ -184,7 +184,8 @@ do not block builds nobody can act on.
 3. Check runtime: exec-form CMD, user, port, signal handling, proxy settings,
    healthcheck.
 4. Check compose: healthchecks and dependency conditions, network exposure,
-   volumes, secrets, hardening options.
+   volumes, secrets, hardening options, and that every `${VAR}` it
+   interpolates (and every Dockerfile `CMD` variable) is in `.env.example`.
 5. Scan the built image (see `references/security-scanning.md`) rather than
    guessing at CVEs from the Dockerfile text.
 6. Report findings by severity (blocker, should fix, suggestion) with the

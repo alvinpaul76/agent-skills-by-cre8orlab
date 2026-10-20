@@ -227,7 +227,12 @@ production, so problems surface early. If a path needs to be writable, add a
 - `.env` holds local, non-secret settings (log level, app name, feature flags)
   and is git-ignored.
 - `.env.example` is committed with placeholder values and documents every
-  variable the app reads.
+  variable the app reads, plus every `${VAR}` that `docker-compose.yml`
+  interpolates (such as the published port or `FORWARDED_ALLOW_IPS`), since
+  those never appear in the settings class. Add a test that fails when
+  either set drifts from the file. If a secret is supplied through `secrets/`
+  under Compose, keep it in `.env.example` only when the app has a non-Docker
+  fallback, and say in a comment that Compose ignores it.
 - Passwords and tokens belong in `secrets/` files or the platform's secret
   store, not in `.env`, even for local work.
 
