@@ -29,6 +29,7 @@ long README, or refresh docs after adding or changing an endpoint.
 | `references/plain-language.md` | Word rules, before/after examples, glossary starter |
 | `references/templates.md` | Page layouts for the README and every docs page |
 | `scripts/check_docs.py` | A checker that fails on broken links, unlinked API pages, unbalanced code fences, missing titles, and leaked secrets |
+| `scripts/check_drift.py` | A checker that imports the app and fails when a route, setting, or error code is missing from the docs, or documented but gone |
 
 ## How does it work inside?
 
@@ -38,8 +39,11 @@ long README, or refresh docs after adding or changing an endpoint.
    owns it; other pages link instead of repeating.
 3. The README becomes a project summary: what the project is for, a table of the
    APIs, how to get running, and links — endpoint detail stays on the API pages.
-4. It finishes by running `check_docs.py` and a newcomer reading test on every
-   page.
+4. It finishes by running `check_docs.py`, `check_drift.py`, and a newcomer reading
+   test on every page.
+5. When docs already exist, it follows an update path instead: the drift check lists
+   what is out of date, and a table maps each kind of code change to the pages to
+   edit.
 
 ## What it deliberately avoids
 
@@ -47,6 +51,9 @@ long README, or refresh docs after adding or changing an endpoint.
   the glossary.
 - Rewriting existing docs from scratch when a page only needs an update.
 - Real secrets in any example; keys appear as `<your-api-key>`.
+
+To get a reminder whenever code changes without docs, install the
+[docs-drift-reminder](../hooks/docs-drift-reminder.md) hook.
 
 Pair it with [fastapi-standards](fastapi-standards.md): that skill's
 documentation step and review checklist already point here.
