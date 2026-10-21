@@ -1,8 +1,7 @@
 # Agent Skills by Cre8or Lab
 
-Reusable skills that give coding agents focused engineering guidance, workflows, and
-reference material. Each skill is a self-contained folder that an agent loads when a
-task calls for it.
+Reusable skills, hooks, plugins, and rules files for coding agents. Each piece is
+self-contained, so an agent loads only what a task calls for.
 
 ## What is it for?
 
@@ -21,9 +20,11 @@ task calls for it.
 
 Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
 triggers and what is inside it.
-The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin and two
-hooks for Claude Code: [quiet-command-output](docs/hooks/quiet-command-output.md) and
-[docs-drift-reminder](docs/hooks/docs-drift-reminder.md).
+The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin, two
+Claude Code hooks ([quiet-command-output](docs/hooks/quiet-command-output.md) and
+[docs-drift-reminder](docs/hooks/docs-drift-reminder.md)), and the reusable rules
+files [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) — copy them per project
+or globally; see [rules files](docs/installation.md#rules-files-agentsmd-and-claudemd).
 
 ## Get started
 
@@ -40,12 +41,8 @@ Hooks install the same way, with the repo's own command:
 npx github:alvinpaul76/agent-skills-by-cre8orlab install quiet-command-output
 ```
 
-Prefer to install by hand (clone, then copy or symlink a folder from `skills/`)? See
-[installing skills](docs/installation.md).
-
-Installed an earlier version? Skills now live in `skills/`, so hand-made symlinks
-break and `npx` installs may need a reinstall. See
-[updating an existing install](docs/installation.md#updating-an-existing-install).
+Installing by hand, or upgrading an older install (skills moved into `skills/`)?
+See [installing skills](docs/installation.md).
 
 ## Docs
 

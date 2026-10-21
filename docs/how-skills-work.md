@@ -63,6 +63,11 @@ you get work that follows the skill's standards
 │       ├── SKILL.md
 │       └── scripts/analyze_session.py   summarizes a session log's token usage
 ├── plugins/voice-notify/       a Claude Code plugin (not a skill): spoken alerts
+├── hooks/                      standalone Claude Code hooks
+├── bin/cli.js                  the `cre8orlab-hooks` installer (used via npx)
+├── test/                       tests for the installer and hooks
+├── AGENTS.md, CLAUDE.md        always-on rules files — copy per project or global
+├── package.json                package metadata and the `npm test` command
 ├── .claude-plugin/             marketplace listing for the plugin
 └── docs/                       these pages
 ```

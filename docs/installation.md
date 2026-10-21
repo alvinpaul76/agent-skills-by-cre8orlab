@@ -82,6 +82,35 @@ add `#branch-name` to the source, for example
 Each skill lives in a subfolder named after it, so a skill called `fastapi-docker`
 goes at `<location>/fastapi-docker/SKILL.md`.
 
+## Rules files (AGENTS.md and CLAUDE.md)
+
+Skills load on demand. Rules files are the opposite: always-on instructions the
+agent reads at the start of every session. The `AGENTS.md` and `CLAUDE.md` at the
+root of this repository are written to be reused — copy them into a project, or
+into your agent's global config to apply them everywhere.
+
+**Per project** — copy the files to the project root:
+
+```bash
+cp AGENTS.md /path/to/project/AGENTS.md
+cp CLAUDE.md /path/to/project/CLAUDE.md
+```
+
+Claude Code reads `CLAUDE.md`. Its first line (`@AGENTS.md`) makes it load
+`AGENTS.md`, so copy both files and you only ever edit `AGENTS.md`.
+
+**Global (every project)** — one file per agent:
+
+| Agent | Global rules file |
+| --- | --- |
+| Devin CLI | `~/.config/devin/AGENTS.md` (`%APPDATA%\devin\AGENTS.md` on Windows) |
+| Claude Code | `~/.claude/CLAUDE.md` (Devin CLI reads this too) |
+
+One caveat before copying: this repo's `AGENTS.md` has two halves. Section 1
+(behavioral guidelines) is generic and safe to reuse anywhere. Section 2 (issue
+tracker, triage labels, domain docs) is specific to this repository — leave it
+out, or replace it with rules for the project you are copying into.
+
 ## Copy or symlink?
 
 - **Symlink** when you want the skills to track this repository — `git pull`
