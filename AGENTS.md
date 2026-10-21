@@ -36,6 +36,10 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - Transform tasks into verifiable goals (e.g., "Fix the bug" → "Write a test that reproduces it, then make it pass").
 - For multi-step tasks, state a brief plan with verification steps.
 
+### Communication Style
+**Extremely concise. Sacrifice grammar for concision.**
+- When reporting information to me, be extremely concise and sacrifice grammar for the sake of concision.
+
 ---
 
 ## 2. Agent Skills & Workflows
