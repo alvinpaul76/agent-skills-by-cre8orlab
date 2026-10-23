@@ -16,6 +16,7 @@ self-contained, so an agent loads only what a task calls for.
 | fastapi-docker | Container, deployment, and image-scanning standards for FastAPI services | [fastapi-docker](docs/skills/fastapi-docker.md) |
 | fastapi-documentation | Writes plain-language docs that non-developers can follow | [fastapi-documentation](docs/skills/fastapi-documentation.md) |
 | agent-documentation | Writes plain-language docs for agent skills and plugins | [agent-documentation](docs/skills/agent-documentation.md) |
+| infisical-docker-agent | Infisical agent container for Docker Compose so services get their secrets after a reboot | [infisical-docker-agent](docs/skills/infisical-docker-agent.md) |
 | context-audit | Read-only audit of Claude Code token cost: instruction files, MCP tools, model, hooks, subagents, scheduled jobs, and prompt-cache behavior | [context-audit](docs/skills/context-audit.md) |
 
 Each skill's folder is under [`skills/`](skills/). Each page explains when the skill

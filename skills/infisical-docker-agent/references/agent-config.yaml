@@ -1,0 +1,19 @@
+infisical:
+  address: "https://<your-infisical-host>"
+
+auth:
+  type: "universal-auth"
+  config:
+    client-id: "/run/infisical-auth/client-id"
+    client-secret: "/run/infisical-auth/client-secret"
+    remove_client_secret_on_read: false
+
+sinks:
+  - type: "file"
+    config:
+      path: "/shared-secrets/.agent-token"
+
+templates:
+  - source-path: "/templates/app.tpl"
+    destination-path: "/shared-secrets/app.env"
+    template-id: "app-env"

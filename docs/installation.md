@@ -169,7 +169,7 @@ longer exists, so the skill has quietly stopped loading. Recreate each link. Thi
 example uses `~/.claude/skills`; swap in your own skills directory:
 
 ```bash
-for s in fastapi-standards fastapi-docker fastapi-documentation agent-documentation context-audit; do
+for s in fastapi-standards fastapi-docker fastapi-documentation agent-documentation context-audit infisical-docker-agent; do
   ln -sfn "$(pwd)/skills/$s" ~/.claude/skills/$s
 done
 ```
