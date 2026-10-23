@@ -1,0 +1,21 @@
+  # Consumer: wait for rendered file, export needed keys, exec original entrypoint.
+  myservice:
+    image: <image>
+    restart: unless-stopped
+    depends_on:
+      infisical-agent:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        until [ -s /shared-secrets/app.env ]; do sleep 1; done
+        while IFS= read -r line || [ -n "$$line" ]; do
+          case "$$line" in
+            MY_KEY=*|OTHER_KEY=*) export "$$line" ;;
+          esac
+        done < /shared-secrets/app.env
+        test -n "$$MY_KEY" || { echo "MY_KEY missing from app.env" >&2; exit 1; }
+        exec <original-entrypoint> <args>
+    volumes:
+      - shared_secrets:/shared-secrets:ro

@@ -26,3 +26,5 @@ The terms these docs use, in plain words.
 | Context | Everything the model reads on one turn: instructions, tool descriptions, and the conversation so far. |
 | LLM | The AI language model behind an agent. |
 | Slash command | A command typed with a leading `/` that starts a skill or action by name. |
+| Infisical | A service that stores secrets (passwords, keys) and hands them to apps. |
+| Docker Compose | A tool that starts several containers together from one `docker-compose.yml` file. |
