@@ -6,9 +6,10 @@ services:
       - |
         set -e
         test -n "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_ID" && test -n "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET" || { echo "Infisical Universal Auth credentials are required" >&2; exit 1; }
-        umask 077
-        printf '%s' "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_ID" > /run/infisical-auth/client-id
-        printf '%s' "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET" > /run/infisical-auth/client-secret
+        # umask only for the credential files: the rendered file must stay readable by consumers.
+        ( umask 077
+          printf '%s' "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_ID" > /run/infisical-auth/client-id
+          printf '%s' "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET" > /run/infisical-auth/client-secret )
         unset INFISICAL_UNIVERSAL_AUTH_CLIENT_ID INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET
         exec /bin/infisical agent --config=/etc/infisical-agent/agent-config.yaml
     env_file:
@@ -19,6 +20,8 @@ services:
       - shared_secrets:/shared-secrets
     tmpfs:
       - /run/infisical-auth:mode=0700
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
     healthcheck:
       test:
@@ -32,7 +35,5 @@ services:
       start_period: 5s
 
 # volumes:
-#   shared_secrets:
+#   shared_secrets:        # Docker-managed, persistent, root-only; no host setup
 #     name: shared_secrets
-#     driver: local
-#     driver_opts: { type: none, device: ${STORAGE}/shared_secrets, o: bind }

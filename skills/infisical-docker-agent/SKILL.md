@@ -14,7 +14,7 @@ Pattern: an `infisical-agent` container authenticates with Universal Auth, rende
    - `infisical/agent-config.yaml` (set `address`)
    - `infisical/templates/<app>.tpl` (set project ID, env, path, allowed keys; keep the `# render-complete` last line)
    - `.env.agent.example`; add `.env.agent` to `.gitignore`
-2. **Shared volume** `shared_secrets` mounted rw in the agent, `:ro` in consumers. Host dir must be root-restricted; it holds live credentials.
+2. **Shared volume** `shared_secrets` mounted rw in the agent, `:ro` in consumers. Declare it as a plain Docker-managed named volume (`shared_secrets:\n    name: shared_secrets`, no `driver_opts`/bind). No host dir, no setup script, no chown/chmod; it lives root-only under `/var/lib/docker/volumes` and persists across reboots. The last rendered file is the fallback when Infisical is down, so do NOT use tmpfs and do not use `down -v` casually. Only bind-mount if the user explicitly wants the data at a chosen host path.
 3. **Consumers**: wrap the entrypoint (`references/compose-consumer.yml`): wait for the file, export only the keys needed, check they are non-empty, then `exec` the original entrypoint. Add `depends_on: infisical-agent: condition: service_healthy`.
 4. **Restart policy**: `restart: unless-stopped` on every service including the agent.
 5. **Host boot path**: `systemctl is-enabled docker` must be `enabled`. Any external network (`external: true`) must be created by something that also starts on boot.
@@ -31,7 +31,23 @@ docker compose ps                               # all Up/healthy
 docker compose logs --since=10m infisical-agent
 ```
 
+## Verify the offline fallback
+
+The persisted file should let consumers start while Infisical is unreachable:
+
+```bash
+docker compose up -d && docker compose ps       # healthy, file rendered
+docker compose stop
+# make Infisical unreachable (bad `address` in agent-config.yaml, or block host)
+docker compose up -d && docker compose ps       # consumers should still start from the stale file
+```
+
+If the agent truncates the file or token when it cannot reach Infisical, the healthcheck fails and consumers will not start; fix before relying on it.
+
 ## Gotchas
+
+- **umask scope.** Apply `umask 077` only in a subshell around the credential files (`( umask 077; printf ... )`). A global umask makes the agent's rendered file root-only 0600 and consumers (non-root) cannot read it.
+- **Hardening.** Add `cap_drop: [ALL]`, `no-new-privileges:true`, and memory/cpu limits to the agent.
 
 - **Healthcheck = real readiness.** Agent healthy only when `.agent-token` is non-empty AND the rendered file contains the `# render-complete` marker. A bare "file exists" passes on partial renders.
 - **Universal Auth needs file paths, not values.** The agent config takes `client-id`/`client-secret` as paths. Write the env values to a tmpfs (`/run/infisical-auth`, mode 0700, umask 077) in the container command, then unset the vars before `exec`.
