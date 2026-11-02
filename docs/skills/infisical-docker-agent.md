@@ -41,7 +41,9 @@ failing.
 
 ## What it deliberately avoids
 
-- Pointing at `:latest` for the agent image; the version is pinned.
+- Pointing at `:latest` for the agent image; the version is pinned in the compose `.env`
+  as `INFISICAL_CLI_IMAGE=infisical/cli:<version>`. Fill in the version; Compose fails
+  if it is unset.
 - Agent `execute.command` hooks, which need Docker socket access.
 - A tmpfs or host bind mount for the shared secrets; either loses the offline fallback
   or needs extra host setup.
