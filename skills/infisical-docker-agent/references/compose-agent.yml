@@ -1,6 +1,6 @@
 services:
   infisical-agent:
-    image: infisical/cli:<pin-version>
+    image: ${INFISICAL_CLI_IMAGE}
     entrypoint: ["/sbin/tini", "--", "/bin/sh", "-c"]
     command:
       - |
