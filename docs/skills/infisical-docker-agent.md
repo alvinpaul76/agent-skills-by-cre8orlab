@@ -18,7 +18,7 @@ failing.
 
 | File | What it holds |
 | --- | --- |
-| `SKILL.md` | The pattern, setup steps, the reboot test, and common gotchas |
+| `SKILL.md` | The pattern, setup steps, the reboot and offline-fallback tests, and common gotchas |
 | `references/compose-agent.yml` | The `infisical-agent` service, with its healthcheck |
 | `references/compose-consumer.yml` | A service that waits for the secrets file, then starts |
 | `references/agent-config.yaml` | Agent settings: Infisical address, login method, output file |
@@ -35,11 +35,16 @@ failing.
    after a reboot with no manual commands.
 4. The skill's real test is a reboot: check that all services are up and healthy
    afterwards.
+5. The shared volume is a plain Docker-managed named volume (no host folder or setup
+   script). It keeps the last rendered file, so services can still start if Infisical
+   is down. A second test checks this offline fallback.
 
 ## What it deliberately avoids
 
 - Pointing at `:latest` for the agent image; the version is pinned.
 - Agent `execute.command` hooks, which need Docker socket access.
+- A tmpfs or host bind mount for the shared secrets; either loses the offline fallback
+  or needs extra host setup.
 - Putting variables Compose reads before containers start (port mappings, volume
   paths) only in Infisical; those must also be in the local `.env`.
 
