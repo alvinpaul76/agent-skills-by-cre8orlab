@@ -35,9 +35,17 @@ failing.
    after a reboot with no manual commands.
 4. The skill's real test is a reboot: check that all services are up and healthy
    afterwards.
-5. The shared volume is a plain Docker-managed named volume (no host folder or setup
-   script). It keeps the last rendered file, so services can still start if Infisical
-   is down. A second test checks this offline fallback.
+5. The shared volume is a plain Docker-managed volume (no host folder, setup script
+   or fixed `name:`), so each Compose project gets its own. It keeps the last
+   rendered file, so services can still start if Infisical is down. A second test
+   checks this offline fallback.
+6. Each Compose project with secrets gets its own agent, machine identity and
+   `.env.agent`. The agent has no `container_name`, so two projects never clash.
+7. Only the `*.example` config files are committed. The real `agent-config.yaml`,
+   `<app>.tpl`, `.env.agent` and `.infisical.yaml` hold deployment-specific values
+   and are gitignored.
+8. The skill also updates the repo's README or docs: prerequisites, the copy step,
+   restart after a secret change, and troubleshooting.
 
 ## What it deliberately avoids
 
@@ -47,6 +55,9 @@ failing.
 - Agent `execute.command` hooks, which need Docker socket access.
 - A tmpfs or host bind mount for the shared secrets; either loses the offline fallback
   or needs extra host setup.
+- A fixed `container_name` or volume `name:`; both are global on the host and break a
+  second project.
+- A shared host-wide agent, unless you ask for one.
 - Putting variables Compose reads before containers start (port mappings, volume
   paths) only in Infisical; those must also be in the local `.env`.
 

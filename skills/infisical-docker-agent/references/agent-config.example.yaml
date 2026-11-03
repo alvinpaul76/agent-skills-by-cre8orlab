@@ -14,6 +14,6 @@ sinks:
       path: "/shared-secrets/.agent-token"
 
 templates:
-  - source-path: "/templates/app.tpl"
-    destination-path: "/shared-secrets/app.env"
-    template-id: "app-env"
+  - source-path: "/templates/<app>.tpl"
+    destination-path: "/shared-secrets/<app>.env"
+    template-id: "<app>-env"

@@ -1,4 +1,4 @@
-{{- with secret "<project-id>" "<env>" "/" -}}
+{{- with secret "<project-id>" "<env-slug>" "/" -}}
 {{- range . -}}
 {{- if or (eq .Key "KEY_ONE") (eq .Key "KEY_TWO") -}}
 {{ .Key }}={{ .Value }}
