@@ -11,9 +11,9 @@ Pattern: an `infisical-agent` container authenticates with Universal Auth, rende
 
 1. **Files** (adapt from `references/`):
    - `infisical-agent` service in `docker-compose.yml` (`references/compose-agent.yml`)
-   - `infisical/agent-config.yaml` (set `address`)
-   - `infisical/templates/<app>.tpl` (set project ID, env, path, allowed keys; keep the `# render-complete` last line)
+   - `infisical/agent-config.example.yaml` (placeholder `address`) and `infisical/templates/<app>.example.tpl` (placeholder project ID, env, path; set allowed keys; keep the `# render-complete` last line). Commit only these `*.example` files. Copy them to `agent-config.yaml` / `<app>.tpl` for the real values and **gitignore the real ones** (see Gotchas).
    - `.env.agent.example`; add `.env.agent` to `.gitignore`
+   - If `infisical init` created `.infisical.yaml` (holds the project ID), gitignore it and commit a `.infisical.example.yaml` instead.
    - In the compose-level `.env` and `.env.example`, add the pinned agent image (user fills in the version):
      ```
      # Infisical agent sidecar image (pin a specific infisical/cli version)
@@ -23,7 +23,14 @@ Pattern: an `infisical-agent` container authenticates with Universal Auth, rende
 3. **Consumers**: wrap the entrypoint (`references/compose-consumer.yml`): wait for the file, export only the keys needed, check they are non-empty, then `exec` the original entrypoint. Add `depends_on: infisical-agent: condition: service_healthy`.
 4. **Restart policy**: `restart: unless-stopped` on every service including the agent.
 5. **Host boot path**: `systemctl is-enabled docker` must be `enabled`. Any external network (`external: true`) must be created by something that also starts on boot.
-6. **Machine identity**: Universal Auth, read-only, scoped to one project/env/path. Its client ID/secret in `.env.agent` are the only secret left on disk: `chmod 600`, never commit.
+6. **Docs**: if the repo has a README or `docs/`, update them in the same change; stale docs that say "put the secret in `.env`" are the usual leftover. Keep the setup steps on one page and link to it from the rest (install, configuration, troubleshooting, FAQ). Cover:
+   - the Infisical prerequisites: project holding the secrets, Universal Auth machine identity (read-only, one project/env/path), pinned `INFISICAL_CLI_IMAGE`
+   - the copy step: `.env.agent`, `agent-config.yaml`, `<app>.tpl` from their `*.example` files (and `chmod 600 .env.agent`), with a table of what to fill in each, and why the real files are gitignored
+   - that the migrated secrets are no longer read from `.env`; remove them from the docs, or say they are unused if left in `.env.example`
+   - restart after a secret change (`docker compose restart <svc>`), the offline fallback and the `down -v` warning
+   - troubleshooting: `docker compose logs infisical-agent`, login errors (client ID/secret), missing key (secret name/project ID/env slug in the template), unset `INFISICAL_CLI_IMAGE`
+   Finish with `grep -rn` for the migrated secret names in the docs to catch leftovers.
+7. **Machine identity**: Universal Auth, read-only, scoped to one project/env/path. Its client ID/secret in `.env.agent` are the only secret left on disk: `chmod 600`, never commit.
 
 ## Verify (the real test is a reboot)
 
@@ -51,6 +58,14 @@ If the agent truncates the file or token when it cannot reach Infisical, the hea
 
 ## Gotchas
 
+- **Don't commit deployment-specific values.** The Infisical host, project ID and env slug are specific to one deployment. Commit `*.example` files with placeholders and add the real files to `.gitignore`, with an exception so the examples stay tracked:
+  ```
+  infisical/agent-config.yaml
+  infisical/templates/*.tpl
+  !infisical/templates/*.example.tpl
+  .infisical.yaml
+  ```
+  Also tell the user to document the copy step (README/docs). Check with `git check-ignore -v` that the examples are not ignored. If the real files were already committed, `git rm --cached` them; history rewrite is usually unnecessary since none are credentials.
 - **umask scope.** Apply `umask 077` only in a subshell around the credential files (`( umask 077; printf ... )`). A global umask makes the agent's rendered file root-only 0600 and consumers (non-root) cannot read it.
 - **Hardening.** Add `cap_drop: [ALL]`, `no-new-privileges:true`, and memory/cpu limits to the agent.
 

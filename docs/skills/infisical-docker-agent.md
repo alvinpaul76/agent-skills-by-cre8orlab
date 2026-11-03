@@ -21,8 +21,8 @@ failing.
 | `SKILL.md` | The pattern, setup steps, the reboot and offline-fallback tests, and common gotchas |
 | `references/compose-agent.yml` | The `infisical-agent` service, with its healthcheck |
 | `references/compose-consumer.yml` | A service that waits for the secrets file, then starts |
-| `references/agent-config.yaml` | Agent settings: Infisical address, login method, output file |
-| `references/app.tpl` | Template that picks which secrets to write, ending in a `# render-complete` line |
+| `references/agent-config.example.yaml` | Agent settings: Infisical address, login method, output file |
+| `references/app.example.tpl` | Template that picks which secrets to write, ending in a `# render-complete` line |
 | `references/.env.agent.example` | Example of the agent's own login credentials file |
 
 ## How does it work inside?
