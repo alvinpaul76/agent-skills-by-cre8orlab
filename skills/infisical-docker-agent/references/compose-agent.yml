@@ -1,25 +1,31 @@
 services:
   infisical-agent:
-    image: ${INFISICAL_CLI_IMAGE}
+    image: ${INFISICAL_CLI_IMAGE:?INFISICAL_CLI_IMAGE must be set in .env (pin a version, e.g. infisical/cli:0.44.8)}
     entrypoint: ["/sbin/tini", "--", "/bin/sh", "-c"]
     command:
       - |
         set -e
         test -n "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_ID" && test -n "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET" || { echo "Infisical Universal Auth credentials are required" >&2; exit 1; }
-        # umask only for the credential files: the rendered file must stay readable by consumers.
+        test -n "$$INFISICAL_ADDRESS" && test -n "$$INFISICAL_PROJECT_ID" && test -n "$$INFISICAL_ENV" || { echo "INFISICAL_ADDRESS, INFISICAL_PROJECT_ID and INFISICAL_ENV are required" >&2; exit 1; }
+        # sed uses | as delimiter and & is special in the replacement: allow only URL/id/slug characters.
+        case "$$INFISICAL_ADDRESS$$INFISICAL_PROJECT_ID$$INFISICAL_ENV" in *[!A-Za-z0-9._:/-]*) echo "INFISICAL_ADDRESS/INFISICAL_PROJECT_ID/INFISICAL_ENV contain invalid characters" >&2; exit 1 ;; esac
+        # umask only for the credential and template files: the rendered file must stay readable by consumers.
         ( umask 077
+          sed -e "s|__INFISICAL_ADDRESS__|$$INFISICAL_ADDRESS|g" /templates/agent-config.yaml > /run/infisical-tpl/agent-config.yaml
+          sed -e "s|__INFISICAL_PROJECT_ID__|$$INFISICAL_PROJECT_ID|g" -e "s|__INFISICAL_ENV__|$$INFISICAL_ENV|g" /templates/<app>.tpl > /run/infisical-tpl/<app>.tpl
           printf '%s' "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_ID" > /run/infisical-auth/client-id
           printf '%s' "$$INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET" > /run/infisical-auth/client-secret )
         unset INFISICAL_UNIVERSAL_AUTH_CLIENT_ID INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET
-        exec /bin/infisical agent --config=/etc/infisical-agent/agent-config.yaml
+        exec /bin/infisical agent --config=/run/infisical-tpl/agent-config.yaml
     env_file:
       - .env.agent
     volumes:
-      - ./infisical/agent-config.yaml:/etc/infisical-agent/agent-config.yaml:ro
+      - ./infisical/agent-config.yaml:/templates/agent-config.yaml:ro
       - ./infisical/templates/<app>.tpl:/templates/<app>.tpl:ro
       - shared_secrets:/shared-secrets
     tmpfs:
       - /run/infisical-auth:mode=0700
+      - /run/infisical-tpl:mode=0700
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     mem_limit: 256m
@@ -36,6 +42,6 @@ services:
       retries: 20
       start_period: 5s
 
-# Add to the file's top-level volumes: (next to any existing ones)
+# Add to the top-level volumes: (next to any existing ones)
 # volumes:
 #   shared_secrets: {}     # Docker-managed, persistent, root-only; per project (<project>_shared_secrets); no fixed name

@@ -21,9 +21,9 @@ failing.
 | `SKILL.md` | The pattern, setup steps, the reboot and offline-fallback tests, and common gotchas |
 | `references/compose-agent.yml` | The `infisical-agent` service, with its healthcheck |
 | `references/compose-consumer.yml` | A service that waits for the secrets file, then starts |
-| `references/agent-config.example.yaml` | Agent settings: Infisical address, login method, output file |
-| `references/app.example.tpl` | Template that picks which secrets to write, ending in a `# render-complete` line |
-| `references/.env.agent.example` | Example of the agent's own login credentials file |
+| `references/agent-config.yaml` | Agent settings: login method, output file; address is a `__INFISICAL_ADDRESS__` token |
+| `references/app.tpl` | Template that picks which secrets to write (project ID and env are tokens), ending in a `# render-complete` line |
+| `references/.env.agent.example` | Example of the agent's own file: login credentials plus Infisical address, project ID and env |
 
 ## How does it work inside?
 
@@ -41,10 +41,11 @@ failing.
    checks this offline fallback.
 6. Each Compose project with secrets gets its own agent, machine identity and
    `.env.agent`. The agent has no `container_name`, so two projects never clash.
-7. Only the `*.example` config files are committed. The real `agent-config.yaml`,
-   `<app>.tpl`, `.env.agent` and `.infisical.yaml` hold deployment-specific values
-   and are gitignored.
-8. The skill also updates the repo's README or docs: prerequisites, the copy step,
+7. The agent config and template are committed with `__INFISICAL_*__` tokens. At
+   start the agent's script fills them in from `.env.agent` (checked for safe
+   characters) into tmpfs copies. Only `.env.agent` is gitignored; `.infisical.yaml`
+   is committed.
+8. The skill also updates the repo's README or docs: prerequisites, the `.env.agent` copy step,
    restart after a secret change, and troubleshooting.
 
 ## What it deliberately avoids
