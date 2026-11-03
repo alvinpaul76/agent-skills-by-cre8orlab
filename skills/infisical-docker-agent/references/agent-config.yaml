@@ -1,5 +1,5 @@
 infisical:
-  address: "https://<your-infisical-host>"
+  address: "__INFISICAL_ADDRESS__"
 
 auth:
   type: "universal-auth"
@@ -14,6 +14,6 @@ sinks:
       path: "/shared-secrets/.agent-token"
 
 templates:
-  - source-path: "/templates/<app>.tpl"
+  - source-path: "/run/infisical-tpl/<app>.tpl"
     destination-path: "/shared-secrets/<app>.env"
     template-id: "<app>-env"
