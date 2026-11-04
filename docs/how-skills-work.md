@@ -62,9 +62,11 @@ you get work that follows the skill's standards
 │   │   ├── SKILL.md
 │   │   ├── references/
 │   │   └── scripts/check_docs.py   checks every skill and plugin has a page
-│   └── context-audit/          read-only audit of Claude Code context and token cost
-│       ├── SKILL.md
-│       └── scripts/analyze_session.py   summarizes a session log's token usage
+│   ├── context-audit/          read-only audit of Claude Code context and token cost
+│   │   ├── SKILL.md
+│   │   └── scripts/analyze_session.py   summarizes a session log's token usage
+│   └── review-fix-ship/        review, fix, document, commit, and push in one pass
+│       └── SKILL.md
 ├── plugins/voice-notify/       a Claude Code plugin (not a skill): spoken alerts
 ├── hooks/                      standalone Claude Code hooks
 ├── bin/cli.js                  the `cre8orlab-hooks` installer (used via npx)
