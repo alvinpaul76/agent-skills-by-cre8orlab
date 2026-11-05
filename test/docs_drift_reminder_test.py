@@ -1,4 +1,6 @@
 import importlib.util
+import os
+import tempfile
 import pathlib
 import unittest
 
@@ -19,6 +21,28 @@ class IsAppSource(unittest.TestCase):
         for f in ("/work/project/README.md", "/work/project/tests/app/test_x.py",
                   "/work/project/app/notes.txt", "/work/other/app/main.py"):
             self.assertFalse(ddr.is_app_source(f, ROOT), f)
+
+
+class IsSource(unittest.TestCase):
+    def test_source_files(self):
+        for f in ("/work/project/src/index.ts", "/work/project/main.go",
+                  "/work/project/app/main.py"):
+            self.assertTrue(ddr.is_source(f, ROOT), f)
+
+    def test_docs_and_non_source_are_ignored(self):
+        for f in ("/work/project/README.md", "/work/project/docs/conf.py",
+                  "/work/project/package-lock.json", "/work/other/src/index.ts"):
+            self.assertFalse(ddr.is_source(f, ROOT), f)
+
+
+class OncePerSession(unittest.TestCase):
+    def test_second_call_is_false(self):
+        sid = f"test-{os.getpid()}"
+        marker = pathlib.Path(tempfile.gettempdir()) / f"docs-drift-reminder-{sid}"
+        marker.unlink(missing_ok=True)
+        self.addCleanup(lambda: marker.unlink(missing_ok=True))
+        self.assertTrue(ddr.first_time_this_session(sid))
+        self.assertFalse(ddr.first_time_this_session(sid))
 
 
 if __name__ == "__main__":

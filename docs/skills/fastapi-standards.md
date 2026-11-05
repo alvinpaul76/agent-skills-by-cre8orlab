@@ -21,7 +21,7 @@ standards matter most.
 | `references/architecture.md` | Layered architecture, folder layout, dependency rules |
 | `references/boundaries-and-data.md` | Pydantic schemas, dependency injection, sessions and transactions, error handling |
 | `references/operations.md` | Settings and secrets, auth, logging, testing, API design, background jobs, deployment |
-| `references/review-checklist.md` | Anti-patterns, definition of done, implementation order |
+| `references/review-checklist.md` | Anti-patterns and the definition-of-done checklist |
 
 The agent reads `SKILL.md` first, then opens only the reference file the task
 needs, so a small question does not load the whole rulebook.

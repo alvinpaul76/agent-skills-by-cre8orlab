@@ -51,6 +51,8 @@ you get work that follows the skill's standards
 │   ├── fastapi-docker/         container and deployment standards for FastAPI
 │   │   ├── SKILL.md
 │   │   └── references/
+│   ├── docker-compose-standards/  shared Compose rules: names, pinned images, .env.example
+│   │   └── SKILL.md
 │   ├── infisical-docker-agent/ Infisical secrets sidecar for Docker Compose
 │   │   ├── SKILL.md
 │   │   └── references/

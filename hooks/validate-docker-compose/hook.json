@@ -1,0 +1,6 @@
+{
+  "event": "PostToolUse",
+  "matcher": "Edit|Write|MultiEdit",
+  "script": "validate-docker-compose.py",
+  "args": "--hook"
+}

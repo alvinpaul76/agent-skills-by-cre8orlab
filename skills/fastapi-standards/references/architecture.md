@@ -41,20 +41,6 @@ Every application should follow these principles:
 Dependencies point inward:
 
 ```text
-HTTP / FastAPI
-     |
-     v
-Application use cases
-     |
-     v
-Domain model and business rules
-
-Infrastructure adapters ---> implement interfaces required by the inner layers
-```
-
-A more concrete view:
-
-```text
 API routes
    |-- request/response schemas
    |-- authentication and HTTP mapping
@@ -190,10 +176,8 @@ docs/                            # architecture, apis/<feature>.md, troubleshoot
 
 ### The business decision rule
 
-Ask: **"Would this decision still be required if the application were
-called from a CLI, scheduled job, message consumer, or another API?"**
+Applying the quick test from `SKILL.md`:
 
--   If yes, it is likely a domain rule or application use case.
 -   If it decides *what is allowed, required, eligible, or valid in the
     business*, it belongs in the domain.
 -   If it coordinates steps to achieve a business goal, it belongs in
@@ -465,6 +449,6 @@ adapters/clients.
 -   Wrap a hosted vendor API in a small client class with the same method
     surface as the local alternative, so the adapter depends on one shape.
 -   Map every vendor failure (HTTP 4xx and 5xx, timeouts, malformed
-    bodies) to one application error such as `ClassifierUnavailable`; the
+    bodies) to one application error such as `PaymentProviderUnavailable`; the
     API layer then returns a stable 503 without vendor detail.
 -   Keep the vendor key out of logs and error bodies.

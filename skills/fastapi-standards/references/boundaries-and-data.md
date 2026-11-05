@@ -206,7 +206,7 @@ Choose based on actual workload and library support, not fashion.
 -   Sync routes plus a lock serialize the work; that is the correct trade-off
     for one local model. Scale with replicas, not threads.
 -   Keep the heavy dependency imported only in infrastructure, and give tests
-    a deterministic `mock` backend so they never load weights.
+    a deterministic fake backend so they never load the real resource.
 -   Choose the backend with a setting (`local` or `hosted`) behind one
     adapter surface, so routes, use cases, and tests do not change.
 
@@ -256,7 +256,7 @@ from fastapi.responses import JSONResponse
 STATUS_BY_ERROR: dict[type[DomainError], int] = {
     NotFoundError: status.HTTP_404_NOT_FOUND,
     ConflictError: status.HTTP_409_CONFLICT,
-    BusinessRuleViolation: status.HTTP_422_UNPROCESSABLE_ENTITY,
+    BusinessRuleViolation: 422,  # Starlette renamed the 422 constant; a literal works on every version
 }
 
 

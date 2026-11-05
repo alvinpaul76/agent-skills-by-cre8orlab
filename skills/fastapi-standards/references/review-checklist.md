@@ -1,10 +1,9 @@
-# Anti-patterns, definition of done, implementation order (sections 23-25)
+# Anti-patterns and definition of done (sections 23-24)
 
 ## Contents
 
 -   [23. Anti-patterns to avoid](#23-anti-patterns-to-avoid)
--   [24. Definition of done and non-negotiable rules](#24-definition-of-done-and-non-negotiable-rules)
--   [25. Practical implementation order](#25-practical-implementation-order)
+-   [24. Definition of done](#24-definition-of-done)
 
 ## 23. Anti-patterns to avoid
 
@@ -30,31 +29,10 @@ Avoid these patterns unless there is a clearly documented reason:
 -   Returning HTTP 200 with an error flag in the body.
 
 
-## 24. Definition of done and non-negotiable rules
+## 24. Definition of done
 
-Use this section as the review gate for every new feature and meaningful
-code change. A change is not done until the non-negotiable rules hold and
-the checklist is complete.
-
-### Non-negotiable rules
-
-These are merge blockers. Each one is covered in detail in the section
-noted.
-
-1.  **No business decisions in API routes** (section 4).
-2.  **No FastAPI, SQLAlchemy, or vendor SDK imports in the domain
-    layer** (sections 1 and 5).
-3.  **Use cases express application actions and orchestrate work**, and
-    are reusable from HTTP, CLI, jobs, and message consumers (sections 6
-    and 18).
-4.  **Infrastructure implements technical details behind explicit
-    boundaries** (section 7).
-5.  **Business rules are testable without a web server or production
-    database** (section 16).
-6.  **Transactions, authorization, retries, and side effects are
-    explicit** (sections 6, 10, and 14).
-7.  **Prefer clear, boring, maintainable code over unnecessary
-    abstraction** (section 23).
+A change is done when the non-negotiable rules in `SKILL.md` hold and this
+checklist is complete.
 
 > **Architecture test:** If replacing FastAPI, PostgreSQL, or an
 > external vendor would require rewriting the core business rules, the
@@ -105,37 +83,5 @@ noted.
 -   [ ] Repository behavior has integration tests where needed.
 -   [ ] API behavior, validation, and authorization are tested.
 -   [ ] Formatting, linting, type checks, and tests pass.
--   [ ] Documentation and configuration examples are updated, following the
-    `fastapi-documentation` skill: the README's APIs table lists every API,
-    each API has a page, new error codes are in troubleshooting, and its
-    `check_docs.py` passes.
-
-
-## 25. Practical implementation order
-
-For a new feature, implement in this order:
-
-1.  **Define the business rule.** Write down the invariants, decisions,
-    and failure cases.
-2.  **Create or update domain types and policies.** Keep them
-    framework-independent.
-3.  **Define the use case.** Specify inputs, outputs, dependencies, and
-    workflow.
-4.  **Define required ports.** Add repository or integration interfaces
-    only where needed.
-5.  **Implement infrastructure adapters.** Add database and
-    external-service details.
-6.  **Wire dependencies.** Connect implementations to use cases at the
-    application boundary.
-7.  **Expose the API.** Add request/response schemas, route, status
-    codes, and error mapping.
-8.  **Test at each layer.** Start with business rules, then integration,
-    then HTTP behavior.
-9.  **Review security and reliability.** Check authorization,
-    transactions, retries, timeouts, and logging.
-10. **Document the contract.** Update OpenAPI details, examples,
-    configuration, and operational notes. Write the README and `docs/`
-    pages with the `fastapi-documentation` skill.
-
-The exact order can vary for exploratory work, but the final
-architecture should preserve the boundaries.
+-   [ ] Docs and configuration examples are updated with the
+    `fastapi-documentation` skill, and its `check_docs.py` passes.

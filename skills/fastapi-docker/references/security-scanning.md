@@ -53,8 +53,6 @@ docker run --rm --entrypoint sh <image> -c 'find / -xdev -name "<pkg>*" 2>/dev/n
   --no-install-recommends && rm -rf /var/lib/apt/lists/*` in the runtime stage,
   in the same `RUN` so the apt lists do not stay in a layer. A digest pin means
   patches since that digest are otherwise missed.
-- **Keep builders out of runtime**: no compilers, `uv`, or build tools after
-  the final `FROM`.
 
 ## CI gating
 
@@ -67,8 +65,7 @@ docker run --rm --entrypoint sh <image> -c 'find / -xdev -name "<pkg>*" 2>/dev/n
 
 ## Verify after fixing
 
-1. Rebuild with the project's normal command (for example `docker compose build`).
-2. Re-run the scan with `--ignore-unfixed`: expect zero HIGH and CRITICAL.
-3. Start the container and check it is healthy and runs as the fixed non-root
-   UID (`docker compose exec api id`).
-4. Run the test suite, because a bumped dependency can break behavior.
+Rebuild, re-run the scan with `--ignore-unfixed` (expect zero HIGH and
+CRITICAL), confirm the container is healthy and runs as UID 10001
+(`docker compose exec api id`), and run the tests, since a bumped dependency
+can change behavior.
