@@ -1,0 +1,715 @@
+From e6f7a3e99985812736f64843f608bfb5a1a38470 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 5 Nov 2026 00:51:05 +0000
+Subject: [PATCH] Add validate-docker-compose hook
+
+Checks Compose files against docker-compose-standards after each agent
+edit (exit 2 sends errors back to the agent) and runs the same checks by
+hand or in CI. Never modifies files; reads only _IMAGE keys from .env.
+---
+ .../issues/40-validate-docker-compose-hook.md |  11 +
+ README.md                                     |  11 +-
+ docs/hooks/validate-docker-compose.md         |  81 +++++
+ docs/skills/docker-compose-standards.md       |   6 +-
+ hooks/validate-docker-compose/hook.json       |   6 +
+ .../validate-docker-compose.py                | 298 ++++++++++++++++++
+ skills/docker-compose-standards/SKILL.md      |   2 +-
+ test/validate_docker_compose_test.py          | 213 +++++++++++++
+ 8 files changed, 620 insertions(+), 8 deletions(-)
+ create mode 100644 .scratch/agent-documentation/issues/40-validate-docker-compose-hook.md
+ create mode 100644 docs/hooks/validate-docker-compose.md
+ create mode 100644 hooks/validate-docker-compose/hook.json
+ create mode 100755 hooks/validate-docker-compose/validate-docker-compose.py
+ create mode 100644 test/validate_docker_compose_test.py
+
+diff --git a/.scratch/agent-documentation/issues/40-validate-docker-compose-hook.md b/.scratch/agent-documentation/issues/40-validate-docker-compose-hook.md
+new file mode 100644
+index 0000000..c3d0d13
+--- /dev/null
++++ b/.scratch/agent-documentation/issues/40-validate-docker-compose-hook.md
+@@ -0,0 +1,11 @@
++# Add validate-docker-compose hook
++
++Status: resolved
++Type: task
++
++## Answer
++Added `hooks/validate-docker-compose/` (`hook.json` + `validate-docker-compose.py`): a PostToolUse hook on Edit|Write|MultiEdit that validates the folder of an edited Compose file or `.env.example` against `docker-compose-standards` and exits 2 with the errors so the agent fixes them. The same script runs by hand or in CI (`--json`, `--no-docker`, exit 1 on errors).
++
++Errors: E1 hardcoded image, E2 wrong variable form, E3 missing `.env.example` declaration, E4 floating or unpinned value, E5 invalid YAML or `docker compose --env-file .env.example config -q` failure. Warnings: W1 no patch version, W2 unused `_IMAGE` variable, W3 `.env` differs from `.env.example` (only `_IMAGE` keys are read), W4 check skipped. `build:` services are exempt; anchors and merge keys are resolved by PyYAML; Docker Compose is the fallback parser. Never modifies files.
++
++Tests: `test/validate_docker_compose_test.py` (24 cases, no Docker needed). Docs: `docs/hooks/validate-docker-compose.md`, README hooks list, and the Validate step of `docker-compose-standards`.
+diff --git a/README.md b/README.md
+index 53c7c2f..96aa50a 100644
+--- a/README.md
++++ b/README.md
+@@ -23,11 +23,12 @@ self-contained, so an agent loads only what a task calls for.
+ 
+ Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
+ triggers and what is inside it.
+-The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin, two
+-Claude Code hooks ([quiet-command-output](docs/hooks/quiet-command-output.md) and
+-[docs-drift-reminder](docs/hooks/docs-drift-reminder.md)), and the reusable rules
+-files [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) — copy them per project
+-or globally; see [rules files](docs/installation.md#rules-files-agentsmd-and-claudemd).
++The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin, three Claude Code hooks
++([quiet-command-output](docs/hooks/quiet-command-output.md),
++[docs-drift-reminder](docs/hooks/docs-drift-reminder.md) and
++[validate-docker-compose](docs/hooks/validate-docker-compose.md)), and the reusable rules files
++[`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) — copy them per project or globally; see
++[rules files](docs/installation.md#rules-files-agentsmd-and-claudemd).
+ 
+ ## Get started
+ 
+diff --git a/docs/hooks/validate-docker-compose.md b/docs/hooks/validate-docker-compose.md
+new file mode 100644
+index 0000000..f4d34cb
+--- /dev/null
++++ b/docs/hooks/validate-docker-compose.md
+@@ -0,0 +1,81 @@
++# validate-docker-compose (hook)
++
++A Claude Code hook that checks every Docker Compose change against the
++[docker-compose-standards](../skills/docker-compose-standards.md) skill and sends
++the agent back to fix any image that is not pinned through a variable.
++
++New to a word? See the [word list](../glossary.md). · hook folder:
++[`hooks/validate-docker-compose/`](../../hooks/validate-docker-compose/)
++
++This is a hook, not a skill. It runs on its own after edits, and the same script
++runs by hand or in CI.
++
++## Install
++
++Needs Node.js, Python 3, and PyYAML (`pip install pyyaml`). Docker Compose is
++optional; with it, the hook also checks the file's syntax.
++
++```bash
++npx github:alvinpaul76/agent-skills-by-cre8orlab install validate-docker-compose
++npx github:alvinpaul76/agent-skills-by-cre8orlab status validate-docker-compose
++npx github:alvinpaul76/agent-skills-by-cre8orlab uninstall validate-docker-compose
++```
++
++Then restart Claude Code and check `/hooks`. The installer works the same way as for
++[quiet-command-output](quiet-command-output.md#install): it merges one entry into
++`~/.claude/settings.json`, backs the file up first, and leaves your other hooks alone.
++
++## What does it do?
++
++After the agent edits or writes a `docker-compose*.yml`, `compose*.yml`, or
++`.env.example` file, the hook checks every Compose file in that folder.
++
++- **Everything follows the rules:** the hook says nothing.
++- **Something breaks a rule:** the hook sends the errors back to the agent, such as
++  `ERROR E4 .env.example:db: POSTGRES_IMAGE=postgres:latest: tag 'latest' is floating`,
++  and the agent fixes them before carrying on.
++
++## Run it by hand or in CI
++
++```bash
++python3 hooks/validate-docker-compose/validate-docker-compose.py            # this folder and below
++python3 hooks/validate-docker-compose/validate-docker-compose.py deploy/   # one folder
++python3 hooks/validate-docker-compose/validate-docker-compose.py --json --no-docker .
++```
++
++It exits with 1 when there is any error, so a CI step fails. Warnings never fail it.
++
++## What the codes mean
++
++| Code | Level | Meaning | What to do |
++| --- | --- | --- | --- |
++| E1 | error | An image is written directly in the Compose file | Replace it with `${NAME_IMAGE:?NAME_IMAGE is required}` and put the version in `.env.example` |
++| E2 | error | The image uses a variable in the wrong form: a default (`:-`), only the tag (`postgres:${TAG}`), or no `:?` | Use exactly one `${NAME_IMAGE:?message}` |
++| E3 | error | The variable is missing from `.env.example`, or there is no `.env.example` | Add `NAME_IMAGE=<image>:<version>` to `.env.example` |
++| E4 | error | The version in `.env.example` can change on the next download: no tag, `latest`, `stable`, or only a major version such as `postgres:18` | Use at least `major.minor` (`postgres:18.6`) or a digest (`@sha256:…`) |
++| E5 | error | The file is not valid YAML, or `docker compose config` rejects it | Fix the file; the message shows Compose's own error |
++| W1 | warning | The version has no patch number (`3.14` rather than `3.14.0`) | Add it if the image publishes one; some, like Postgres, don't |
++| W2 | warning | `.env.example` has an `_IMAGE` variable no Compose file here uses | Remove it, or it is used somewhere the hook can't see |
++| W3 | warning | Your `.env` has a different image than `.env.example` | Usually an upgrade not yet copied across; decide which is right |
++| W4 | warning | Something was not checked: Docker Compose missing, or `include:` / `extends:` in use | Run with Docker Compose, or check those files separately |
++
++Services with `build:` are skipped, because their image is built from your code.
++
++## Things to know
++
++- **It never changes your files.** It only reports. It never prints values from
++  `.env` other than image names.
++- **Errors reach the agent; warnings don't.** In hook mode only errors are sent back.
++  Run the script by hand to see warnings.
++- **No PyYAML and no Docker:** the hook stays quiet rather than blocking every edit.
++  The hand-run command reports that it cannot check.
++- **It runs after the edit.** The file is already changed when the hook speaks; the
++  agent then fixes it. Edits you make yourself are only caught by the hand-run
++  command or CI.
++- **Date-stamped tags** such as `RELEASE.2024-01-16T16-07-38Z` count as pinned. Other
++  unusual tags may be flagged; pin those by digest.
++- **Not Windows.** The settings entry calls `python3`.
++
++## Back to
++
++[Installing skills](../installation.md) · [how skills work](../how-skills-work.md)
+diff --git a/docs/skills/docker-compose-standards.md b/docs/skills/docker-compose-standards.md
+index 43a43a2..3c6e1b6 100644
+--- a/docs/skills/docker-compose-standards.md
++++ b/docs/skills/docker-compose-standards.md
+@@ -31,8 +31,10 @@ Whenever you create, change, review, or debug a `docker-compose*.yml`, `.env`, o
+ 3. Images built from your own code (`build:`) are exempt.
+ 4. `.env.example` lists every variable the Compose files and the app use. The agent
+    never edits your `.env`; it tells you which lines to add.
+-5. Before calling the work done, the agent checks the files with
+-   `docker compose --env-file .env.example config -q`.
++5. Before calling the work done, the agent checks the files with the
++   [validate-docker-compose](../hooks/validate-docker-compose.md) hook's script, or
++   with `docker compose --env-file .env.example config -q` when the hook is not
++   installed.
+ 
+ ## What it deliberately avoids
+ 
+diff --git a/hooks/validate-docker-compose/hook.json b/hooks/validate-docker-compose/hook.json
+new file mode 100644
+index 0000000..1fa3556
+--- /dev/null
++++ b/hooks/validate-docker-compose/hook.json
+@@ -0,0 +1,6 @@
++{
++  "event": "PostToolUse",
++  "matcher": "Edit|Write|MultiEdit",
++  "script": "validate-docker-compose.py",
++  "args": "--hook"
++}
+diff --git a/hooks/validate-docker-compose/validate-docker-compose.py b/hooks/validate-docker-compose/validate-docker-compose.py
+new file mode 100755
+index 0000000..38d0917
+--- /dev/null
++++ b/hooks/validate-docker-compose/validate-docker-compose.py
+@@ -0,0 +1,298 @@
++#!/usr/bin/env python3
++"""
++Validate Docker Compose files against the docker-compose-standards skill.
++
++Every image pulled from a registry must be one `${VAR:?msg}` reference, VAR must
++be declared in `.env.example` next to the Compose file, and its value must be
++pinned (major.minor or more, or a digest). Services with `build:` are exempt.
++
++CLI / CI:  validate-docker-compose.py [--json] [--no-docker] [PATH ...]
++           PATH is a Compose file, a .env.example, or a directory (searched
++           recursively). Default: the current directory. Exit 1 on any ERROR.
++Hook:      validate-docker-compose.py --hook
++           Claude Code PostToolUse hook. Reads the event JSON on stdin; after an
++           edit to a Compose file or .env.example, validates that folder and, on
++           errors, prints them to stderr and exits 2 so the agent fixes them.
++
++Never modifies files. Prints variable names and image references only, never
++other values from .env files. Needs PyYAML, or Docker Compose as a fallback parser.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import re
++import shutil
++import subprocess
++import sys
++from pathlib import Path
++
++COMPOSE_NAME = re.compile(r"^(docker-)?compose(\.[\w.-]+)?\.ya?ml$")
++BASE_NAMES = ("docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml")
++REQUIRED_REF = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*):\?[^}]*\}$")
++ANY_VAR = re.compile(r"(?<!\$)\$(?:\{([A-Za-z_][A-Za-z0-9_]*)[^}]*\}|([A-Za-z_][A-Za-z0-9_]*))")
++FLOATING_TAGS = {"latest", "stable", "main", "master", "edge", "lts", "nightly",
++                 "dev", "develop", "current", "mainline", "rolling", "beta", "alpha"}
++DIGEST = re.compile(r"@sha256:[0-9a-f]{64}$")
++MINOR = re.compile(r"^v?\d+\.\d+")
++PATCH = re.compile(r"^v?\d+\.\d+\.\d+")
++DATED = re.compile(r"\d{4}-?\d{2}-?\d{2}")
++SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__"}
++
++try:
++    import yaml  # PyYAML: safe_load resolves anchors, aliases and << merge keys
++except ImportError:  # pragma: no cover - depends on the machine
++    yaml = None
++
++
++def finding(level, code, file, service, message):
++    return {"level": level, "code": code, "file": str(file), "service": service, "message": message}
++
++
++# ---- image references --------------------------------------------------------
++
++def pin_problem(ref: str) -> tuple[str, str] | None:
++    """Return (level, reason) when an image reference is not acceptably pinned."""
++    if DIGEST.search(ref):
++        return None
++    name = ref.rsplit("/", 1)[-1]
++    if ":" not in name:
++        return "ERROR", "has no tag, so it floats to latest"
++    tag = name.rsplit(":", 1)[1]
++    if tag.lower() in FLOATING_TAGS:
++        return "ERROR", f"tag '{tag}' is floating"
++    if DATED.search(tag):
++        return None  # date-stamped release tags (for example RELEASE.2024-01-01...) are fixed
++    if not MINOR.match(tag):
++        return "ERROR", f"tag '{tag}' needs at least major.minor (or a digest)"
++    if not PATCH.match(tag):
++        return "WARNING", f"tag '{tag}' has no patch version"
++    return None
++
++
++# ---- file reading -------------------------------------------------------------
++
++def read_env(path: Path, only_images: bool = False) -> dict[str, str] | None:
++    """Minimal dotenv reader. With only_images, keeps *_IMAGE keys and drops the rest unread."""
++    if not path.is_file():
++        return None
++    values = {}
++    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
++        line = line.strip()
++        if not line or line.startswith("#") or "=" not in line:
++            continue
++        key, value = line.split("=", 1)
++        key = key.removeprefix("export ").strip()
++        if only_images and not key.endswith("_IMAGE"):
++            continue
++        value = value.strip()
++        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
++            value = value[1:-1]
++        else:
++            value = value.split(" #", 1)[0].strip()
++        values[key] = value
++    return values
++
++
++def load_compose(path: Path, use_docker: bool) -> tuple[dict | None, str | None]:
++    """Parse one Compose file without interpolation. Returns (data, error)."""
++    if yaml is not None:
++        try:
++            data = yaml.safe_load(path.read_text(encoding="utf-8"))
++        except yaml.YAMLError as exc:
++            return None, f"invalid YAML: {str(exc).splitlines()[0]}"
++        return (data if isinstance(data, dict) else {}), None
++    if use_docker and docker_compose():
++        # Fallback: Compose itself parses the file, keeping ${VAR} text intact.
++        proc = subprocess.run(
++            [*docker_compose(), "-f", str(path), "config", "--no-interpolate", "--format", "json"],
++            capture_output=True, text=True, timeout=60, cwd=path.parent)
++        if proc.returncode == 0:
++            return json.loads(proc.stdout), None
++        return None, "docker compose could not parse the file"
++    return None, "cannot parse: install PyYAML (pip install pyyaml) or Docker Compose"
++
++
++_DOCKER = None
++
++
++def docker_compose() -> list[str] | None:
++    global _DOCKER
++    if _DOCKER is None:
++        _DOCKER = []
++        if shutil.which("docker"):
++            ok = subprocess.run(["docker", "compose", "version"], capture_output=True).returncode == 0
++            if ok:
++                _DOCKER = ["docker", "compose"]
++        if not _DOCKER and shutil.which("docker-compose"):
++            _DOCKER = ["docker-compose"]
++    return _DOCKER or None
++
++
++# ---- validation ---------------------------------------------------------------
++
++def validate_dir(folder: Path, files: list[Path], use_docker: bool) -> list[dict]:
++    out: list[dict] = []
++    example_path = folder / ".env.example"
++    example = read_env(example_path)
++    services: dict[str, dict] = {}  # name -> {"build": bool, "image": (value, file) | None}
++    parsed: list[Path] = []
++
++    for f in files:
++        data, error = load_compose(f, use_docker)
++        if error:
++            out.append(finding("ERROR", "E5", f, None, error))
++            continue
++        parsed.append(f)
++        if data.get("include"):
++            out.append(finding("WARNING", "W4", f, None, "`include:` files are not followed; validate them separately"))
++        for name, svc in (data.get("services") or {}).items():
++            if not isinstance(svc, dict):
++                continue
++            entry = services.setdefault(name, {"build": False, "image": None})
++            entry["build"] = entry["build"] or "build" in svc
++            if "image" in svc and svc["image"] is not None:
++                entry["image"] = (str(svc["image"]), f)
++            if "extends" in svc and "image" not in svc:
++                out.append(finding("WARNING", "W4", f, name, "`extends:` is not followed; the inherited image is not checked"))
++
++    used_vars: set[str] = set()
++    for name, entry in services.items():
++        if entry["image"] is None or entry["build"]:
++            continue  # nothing to pull, or a local build whose image: is only the output tag
++        value, f = entry["image"]
++        refs = [a or b for a, b in ANY_VAR.findall(value)]
++        used_vars.update(refs)
++        if not refs:
++            out.append(finding("ERROR", "E1", f, name,
++                               f"hardcoded image '{value}'; use ${{{name.upper().replace('-', '_')}_IMAGE:?...}} "
++                               "and put the pinned value in .env.example"))
++            continue
++        match = REQUIRED_REF.match(value)
++        if not match:
++            out.append(finding("ERROR", "E2", f, name,
++                               f"image '{value}' must be exactly one ${{VAR:?message}} reference "
++                               "(no defaults, partial tags or bare $VAR)"))
++            continue
++        var = match.group(1)
++        if example is None:
++            out.append(finding("ERROR", "E3", f, name, f"{var} needs a .env.example next to the Compose file"))
++            continue
++        if not example.get(var):
++            out.append(finding("ERROR", "E3", f, name, f"{var} is not declared in .env.example"))
++            continue
++        problem = pin_problem(example[var])
++        if problem:
++            level, reason = problem
++            code = "E4" if level == "ERROR" else "W1"
++            out.append(finding(level, code, example_path, name, f"{var}={example[var]}: {reason}"))
++
++    if example is not None and parsed:
++        for var in sorted(k for k in example if k.endswith("_IMAGE") and k not in used_vars):
++            if not any(var in f.read_text(encoding="utf-8") for f in parsed):
++                out.append(finding("WARNING", "W2", example_path, None, f"{var} is not used by any Compose file here"))
++        local = read_env(folder / ".env", only_images=True) or {}
++        for var, value in sorted(local.items()):
++            if var in example and value != example[var]:
++                out.append(finding("WARNING", "W3", folder / ".env", None,
++                                   f"{var} differs from .env.example ({value} vs {example[var]})"))
++
++    if use_docker and parsed:
++        out.extend(docker_check(folder, parsed, example_path))
++    return out
++
++
++def docker_check(folder: Path, files: list[Path], example_path: Path) -> list[dict]:
++    """`docker compose config -q` for the base file, and the base plus each other file."""
++    cmd = docker_compose()
++    if not cmd:
++        return [finding("WARNING", "W4", folder, None, "Docker Compose not found; syntax check (E5) skipped")]
++    base = next((f for f in files if f.name in BASE_NAMES), None)
++    combos = [[f] for f in files] if base is None else \
++        [[base]] + [[base, f] for f in files if f != base]
++    env = ["--env-file", str(example_path)] if example_path.is_file() else []
++    out = []
++    for combo in combos:
++        args = [*cmd, *env, *sum((["-f", str(f)] for f in combo), []), "config", "-q"]
++        proc = subprocess.run(args, capture_output=True, text=True, timeout=60, cwd=folder)
++        if proc.returncode != 0:
++            detail = (proc.stderr.strip().splitlines() or ["unknown error"])[-1]
++            out.append(finding("ERROR", "E5", combo[-1], None, f"docker compose config failed: {detail}"))
++    return out
++
++
++def collect(paths: list[str]) -> dict[Path, list[Path]]:
++    """Group Compose files by folder. A .env.example or a folder selects its Compose files."""
++    groups: dict[Path, set[Path]] = {}
++
++    def add_folder(folder: Path, recursive: bool):
++        walker = os.walk(folder) if recursive else [(folder, [], os.listdir(folder))]
++        for root, dirs, names in walker:
++            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
++            for n in names:
++                if COMPOSE_NAME.match(n):
++                    groups.setdefault(Path(root), set()).add(Path(root) / n)
++
++    for p in map(Path, paths):
++        p = p.resolve()
++        if p.is_dir():
++            add_folder(p, recursive=True)
++        elif p.is_file() and (p.name == ".env.example" or COMPOSE_NAME.match(p.name)):
++            add_folder(p.parent, recursive=False)
++    return {k: sorted(v) for k, v in sorted(groups.items())}
++
++
++def run(paths: list[str], use_docker: bool) -> list[dict]:
++    findings = []
++    for folder, files in collect(paths).items():
++        findings.extend(validate_dir(folder, files, use_docker))
++    return findings
++
++
++def fmt(f: dict) -> str:
++    where = f["file"] + (f":{f['service']}" if f["service"] else "")
++    return f"{f['level']} {f['code']} {where}: {f['message']}"
++
++
++def hook_main() -> int:
++    try:
++        event = json.load(sys.stdin)
++        file_path = event.get("tool_input", {}).get("file_path", "")
++    except (ValueError, AttributeError):
++        return 0
++    if yaml is None and not docker_compose():
++        return 0  # no parser on this machine: stay quiet rather than block every edit
++    name = Path(file_path).name
++    if not file_path or not (name == ".env.example" or COMPOSE_NAME.match(name)) or not Path(file_path).is_file():
++        return 0
++    errors = [f for f in run([file_path], use_docker=True) if f["level"] == "ERROR"]
++    if not errors:
++        return 0
++    print("Docker Compose standards violated (see the docker-compose-standards skill):", file=sys.stderr)
++    print("\n".join(fmt(f) for f in errors), file=sys.stderr)
++    return 2
++
++
++def main(argv: list[str] | None = None) -> int:
++    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[1])
++    parser.add_argument("paths", nargs="*", default=["."])
++    parser.add_argument("--hook", action="store_true", help="run as a Claude Code PostToolUse hook")
++    parser.add_argument("--json", action="store_true", help="print findings as JSON")
++    parser.add_argument("--no-docker", action="store_true", help="skip the docker compose config check")
++    args = parser.parse_args(argv)
++    if args.hook:
++        return hook_main()
++    findings = run(args.paths, use_docker=not args.no_docker)
++    if args.json:
++        print(json.dumps(findings, indent=2))
++    else:
++        for f in findings:
++            print(fmt(f))
++        errors = sum(f["level"] == "ERROR" for f in findings)
++        print(f"{errors} error(s), {len(findings) - errors} warning(s)")
++    return 1 if any(f["level"] == "ERROR" for f in findings) else 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/skills/docker-compose-standards/SKILL.md b/skills/docker-compose-standards/SKILL.md
+index 8df4ffa..cb4bb18 100644
+--- a/skills/docker-compose-standards/SKILL.md
++++ b/skills/docker-compose-standards/SKILL.md
+@@ -31,4 +31,4 @@ Base file `docker-compose.yml`; additional files `docker-compose.<purpose>.yml`
+ 
+ ## Validate
+ 
+-Before calling Compose work done, run the `validate-docker-compose` hook script if it is installed. Otherwise run at least `docker compose --env-file .env.example config -q`, which checks syntax and confirms `.env.example` declares every required variable without needing the user's `.env`.
++Before calling Compose work done, run the validator if it is installed (`python3 ~/.claude/hooks/validate-docker-compose.py <folder>`; as a hook it also runs after each edit, and its error codes are explained in its output). Otherwise run at least `docker compose --env-file .env.example config -q`, which checks syntax and confirms `.env.example` declares every required variable without needing the user's `.env`.
+diff --git a/test/validate_docker_compose_test.py b/test/validate_docker_compose_test.py
+new file mode 100644
+index 0000000..d6425c1
+--- /dev/null
++++ b/test/validate_docker_compose_test.py
+@@ -0,0 +1,213 @@
++import importlib.util
++import io
++import json
++import pathlib
++import tempfile
++import textwrap
++import unittest
++from unittest import mock
++
++path = pathlib.Path(__file__).parent.parent / "hooks/validate-docker-compose/validate-docker-compose.py"
++spec = importlib.util.spec_from_file_location("vdc", path)
++vdc = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(vdc)
++
++
++class Base(unittest.TestCase):
++    def setUp(self):
++        self.tmp = tempfile.TemporaryDirectory()
++        self.dir = pathlib.Path(self.tmp.name)
++
++    def tearDown(self):
++        self.tmp.cleanup()
++
++    def write(self, name, text):
++        p = self.dir / name
++        p.write_text(textwrap.dedent(text))
++        return p
++
++    def check(self, compose, example=None, **files):
++        self.write("docker-compose.yml", compose)
++        if example is not None:
++            self.write(".env.example", example)
++        for name, text in files.items():
++            self.write(name.replace("__", "."), text)
++        return vdc.run([str(self.dir)], use_docker=False)
++
++    def codes(self, findings):
++        return sorted(f["code"] for f in findings)
++
++
++PINNED = "services:\n  db:\n    image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE is required}\n"
++
++
++class Images(Base):
++    def test_pinned_variable_passes(self):
++        self.assertEqual(self.check(PINNED, "POSTGRES_IMAGE=postgres:18.6.1-trixie\n"), [])
++
++    def test_hardcoded_image(self):
++        found = self.check("services:\n  db:\n    image: postgres:18.6\n", "")
++        self.assertEqual(self.codes(found), ["E1"])
++        self.assertIn("${DB_IMAGE:?", found[0]["message"])
++
++    def test_latest_floating_no_tag_and_major_only(self):
++        for value in ("postgres:latest", "postgres:stable", "postgres", "postgres:18", "redis:alpine"):
++            with self.subTest(value=value):
++                found = self.check(PINNED, f"POSTGRES_IMAGE={value}\n")
++                self.assertEqual(self.codes(found), ["E4"])
++
++    def test_missing_patch_is_a_warning(self):
++        found = self.check(PINNED, "POSTGRES_IMAGE=python:3.14-slim-trixie\n")
++        self.assertEqual([(f["level"], f["code"]) for f in found], [("WARNING", "W1")])
++
++    def test_digest_and_dated_tags_pass(self):
++        digest = "postgres@sha256:" + "a" * 64
++        for value in (digest, "postgres:18.6@sha256:" + "b" * 64, "minio/minio:RELEASE.2024-01-16T16-07-38Z"):
++            with self.subTest(value=value):
++                self.assertEqual(self.check(PINNED, f"POSTGRES_IMAGE={value}\n"), [])
++
++    def test_registry_port_is_not_a_tag(self):
++        found = self.check(PINNED, "POSTGRES_IMAGE=registry.local:5000/postgres\n")
++        self.assertEqual(self.codes(found), ["E4"])
++
++    def test_wrong_variable_forms(self):
++        for image in ("${POSTGRES_IMAGE:-postgres:18.6}", "${POSTGRES_IMAGE}", "postgres:${PG_TAG:?x}",
++                      "$POSTGRES_IMAGE"):
++            with self.subTest(image=image):
++                found = self.check(f"services:\n  db:\n    image: \"{image}\"\n", "POSTGRES_IMAGE=postgres:18.6\n")
++                self.assertIn("E2", self.codes(found))
++                self.assertNotIn("E3", self.codes(found))
++
++
++class EnvExample(Base):
++    def test_missing_declaration(self):
++        self.assertEqual(self.codes(self.check(PINNED, "OTHER=1\n")), ["E3"])
++
++    def test_missing_file(self):
++        self.assertEqual(self.codes(self.check(PINNED)), ["E3"])
++
++    def test_unused_image_variable_warns(self):
++        found = self.check(PINNED, "POSTGRES_IMAGE=postgres:18.6.1\nREDIS_IMAGE=redis:8.2.2\n")
++        self.assertEqual(self.codes(found), ["W2"])
++
++    def test_env_differs_warns_without_leaking_other_values(self):
++        found = self.check(PINNED, "POSTGRES_IMAGE=postgres:18.6.1\n",
++                           __env="POSTGRES_IMAGE=postgres:18.5.0\nDB_PASSWORD=hunter2\n")
++        self.assertEqual(self.codes(found), ["W3"])
++        self.assertNotIn("hunter2", json.dumps(found))
++
++
++class Builds(Base):
++    def test_build_only(self):
++        self.assertEqual(self.check("services:\n  api:\n    build: .\n", ""), [])
++
++    def test_build_with_literal_output_tag(self):
++        self.assertEqual(self.check("services:\n  api:\n    build: .\n    image: myapi:local\n", ""), [])
++
++    def test_build_in_base_image_in_override(self):
++        found = self.check("services:\n  api:\n    build: .\n", "",
++                           **{"docker-compose__override__yml": "services:\n  api:\n    image: myapi:dev\n"})
++        self.assertEqual(found, [])
++
++
++class Structure(Base):
++    def test_multiple_services(self):
++        compose = """\
++        services:
++          db:
++            image: ${POSTGRES_IMAGE:?required}
++          cache:
++            image: redis:8.2.2
++          api:
++            build: .
++        """
++        found = self.check(compose, "POSTGRES_IMAGE=postgres:18.6.1\n")
++        self.assertEqual([(f["code"], f["service"]) for f in found], [("E1", "cache")])
++
++    def test_anchors_and_merge_keys(self):
++        compose = """\
++        x-db: &db
++          image: ${POSTGRES_IMAGE:?required}
++          restart: unless-stopped
++        services:
++          primary:
++            <<: *db
++          replica:
++            <<: *db
++            image: postgres:latest
++        """
++        found = self.check(compose, "POSTGRES_IMAGE=postgres:18.6.1\n")
++        self.assertEqual([(f["code"], f["service"]) for f in found], [("E1", "replica")])
++
++    def test_several_variables(self):
++        compose = """\
++        services:
++          db:
++            image: ${POSTGRES_IMAGE:?required}
++          agent:
++            image: ${INFISICAL_CLI_IMAGE:?required}
++        """
++        found = self.check(compose, "POSTGRES_IMAGE=postgres:18.6.1\nINFISICAL_CLI_IMAGE=infisical/cli:latest\n")
++        self.assertEqual([(f["code"], f["service"]) for f in found], [("E4", "agent")])
++
++    def test_invalid_yaml(self):
++        self.assertEqual(self.codes(self.check("services: [\n", "")), ["E5"])
++
++    def test_skips_other_yaml(self):
++        self.write("config.yml", "image: postgres:latest\n")
++        self.assertEqual(vdc.run([str(self.dir)], use_docker=False), [])
++
++
++class Hook(Base):
++    def run_hook(self, file_path):
++        stdin = io.StringIO(json.dumps({"tool_input": {"file_path": str(file_path)}}))
++        stderr = io.StringIO()
++        with mock.patch("sys.stdin", stdin), mock.patch("sys.stderr", stderr), \
++                mock.patch.object(vdc, "docker_compose", return_value=None):
++            return vdc.main(["--hook"]), stderr.getvalue()
++
++    def test_blocks_compose_edit_with_errors(self):
++        p = self.write("docker-compose.yml", "services:\n  db:\n    image: postgres:latest\n")
++        code, err = self.run_hook(p)
++        self.assertEqual(code, 2)
++        self.assertIn("E1", err)
++
++    def test_env_example_edit_revalidates_folder(self):
++        self.write("docker-compose.yml", PINNED)
++        p = self.write(".env.example", "POSTGRES_IMAGE=postgres:latest\n")
++        self.assertEqual(self.run_hook(p)[0], 2)
++
++    def test_clean_and_unrelated_files_pass(self):
++        self.write("docker-compose.yml", PINNED)
++        self.write(".env.example", "POSTGRES_IMAGE=postgres:18.6.1\n")
++        self.assertEqual(self.run_hook(self.dir / "docker-compose.yml"), (0, ""))
++        self.assertEqual(self.run_hook(self.write("app.py", "x = 1\n"))[0], 0)
++
++    def test_warnings_do_not_block(self):
++        self.write("docker-compose.yml", PINNED)
++        p = self.write(".env.example", "POSTGRES_IMAGE=postgres:18.6\n")
++        self.assertEqual(self.run_hook(p)[0], 0)
++
++
++
++class DockerCheck(Base):
++    def test_compose_config_failure_is_e5(self):
++        self.write("docker-compose.yml", PINNED)
++        self.write("docker-compose.prod.yml", PINNED)
++        self.write(".env.example", "POSTGRES_IMAGE=postgres:18.6.1\n")
++        calls = []
++
++        def fake_run(args, **kwargs):
++            calls.append(args)
++            return mock.Mock(returncode=1, stderr="service \"db\" has neither an image nor a build\n")
++
++        with mock.patch.object(vdc, "docker_compose", return_value=["docker", "compose"]), \
++                mock.patch.object(vdc.subprocess, "run", side_effect=fake_run):
++            found = vdc.run([str(self.dir)], use_docker=True)
++        self.assertEqual(self.codes(found), ["E5", "E5"])
++        self.assertIn("--env-file", calls[0])
++        self.assertEqual(sum(a.count("-f") for a in calls), 3)  # base alone, then base + prod
++
++
++if __name__ == "__main__":
++    unittest.main()
+-- 
+2.43.0
+

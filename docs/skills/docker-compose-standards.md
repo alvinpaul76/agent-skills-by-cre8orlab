@@ -31,8 +31,10 @@ Whenever you create, change, review, or debug a `docker-compose*.yml`, `.env`, o
 3. Images built from your own code (`build:`) are exempt.
 4. `.env.example` lists every variable the Compose files and the app use. The agent
    never edits your `.env`; it tells you which lines to add.
-5. Before calling the work done, the agent checks the files with
-   `docker compose --env-file .env.example config -q`.
+5. Before calling the work done, the agent checks the files with the
+   [validate-docker-compose](../hooks/validate-docker-compose.md) hook's script, or
+   with `docker compose --env-file .env.example config -q` when the hook is not
+   installed.
 
 ## What it deliberately avoids
 

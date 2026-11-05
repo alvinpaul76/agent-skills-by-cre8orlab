@@ -31,4 +31,4 @@ Base file `docker-compose.yml`; additional files `docker-compose.<purpose>.yml` 
 
 ## Validate
 
-Before calling Compose work done, run the `validate-docker-compose` hook script if it is installed. Otherwise run at least `docker compose --env-file .env.example config -q`, which checks syntax and confirms `.env.example` declares every required variable without needing the user's `.env`.
+Before calling Compose work done, run the validator if it is installed (`python3 ~/.claude/hooks/validate-docker-compose.py <folder>`; as a hook it also runs after each edit, and its error codes are explained in its output). Otherwise run at least `docker compose --env-file .env.example config -q`, which checks syntax and confirms `.env.example` declares every required variable without needing the user's `.env`.

@@ -23,11 +23,12 @@ self-contained, so an agent loads only what a task calls for.
 
 Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
 triggers and what is inside it.
-The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin, two
-Claude Code hooks ([quiet-command-output](docs/hooks/quiet-command-output.md) and
-[docs-drift-reminder](docs/hooks/docs-drift-reminder.md)), and the reusable rules
-files [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) — copy them per project
-or globally; see [rules files](docs/installation.md#rules-files-agentsmd-and-claudemd).
+The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin, three Claude Code hooks
+([quiet-command-output](docs/hooks/quiet-command-output.md),
+[docs-drift-reminder](docs/hooks/docs-drift-reminder.md) and
+[validate-docker-compose](docs/hooks/validate-docker-compose.md)), and the reusable rules files
+[`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) — copy them per project or globally; see
+[rules files](docs/installation.md#rules-files-agentsmd-and-claudemd).
 
 ## Get started
 
