@@ -26,9 +26,18 @@ Base file `docker-compose.yml`; additional files `docker-compose.<purpose>.yml` 
 - `.env` is git-ignored and belongs to the user. Never edit or overwrite an existing one; tell the user which lines to add.
 - `.env.example` is committed and lists every `${VAR}` the Compose files interpolate, plus every variable the app reads. Image variables carry their real pinned values (versions are not secrets); secrets get placeholders. A secret Compose supplies through `secrets:` files stays out unless the app also reads it without Docker, with a comment saying Compose ignores it.
 - `${VAR:?msg}` only for values that are always required. Use `${VAR:-default}` for settings the app validates itself or that a feature switch can make optional, since `:?` would block the switch.
+- Update `.env.example` in the same change as any Compose edit that adds, renames or removes a `${VAR}`, `environment:` entry or `env_file:`. Do not wait to be asked: a stale example breaks the next clone.
 - Define each variable once: with duplicates the last line wins silently.
 - Containers keep the values they were created with. `docker compose restart` does not re-read `.env`; use `docker compose up -d` (add `--force-recreate` if it reports nothing changed). Compare values without printing them: `printf %s "$v" | sha256sum | cut -c1-8`.
 
 ## Validate
 
-Before calling Compose work done, run the validator if it is installed (`python3 ~/.claude/hooks/validate-docker-compose.py <folder>`; as a hook it also runs after each edit, and its error codes are explained in its output). Otherwise run at least `docker compose --env-file .env.example config -q`, which checks syntax and confirms `.env.example` declares every required variable without needing the user's `.env`.
+Always run this sync check from the Compose folder and fix what it prints (the validator below only covers image variables, so this is what catches the rest). `missing` must be empty; `unused` are stale lines to remove or justify as app-only variables:
+
+```bash
+used=$(grep -ohE '\$\{[A-Za-z_][A-Za-z0-9_]*' docker-compose*.yml compose.y*ml 2>/dev/null | sed 's/^\${//' | sort -u)
+have=$(grep -oE '^[A-Za-z_][A-Za-z0-9_]*' .env.example | sort -u)
+echo "missing:"; comm -23 <(echo "$used") <(echo "$have"); echo "unused:"; comm -13 <(echo "$used") <(echo "$have")
+```
+
+Also check that variables the app reads (settings class, `os.environ`) appear in `.env.example`. Then, before calling Compose work done, run the validator if it is installed (`python3 ~/.claude/hooks/validate-docker-compose.py <folder>`; as a hook it also runs after each edit, and its error codes are explained in its output). Otherwise run at least `docker compose --env-file .env.example config -q`, which checks syntax and confirms `.env.example` declares every required variable without needing the user's `.env`.
