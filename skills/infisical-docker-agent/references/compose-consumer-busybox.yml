@@ -1,0 +1,37 @@
+  # Consumer for shell-less images with no shell variant (e.g. portainer/agent). Add to top-level volumes: busybox_bin: {}
+  busybox-init:
+    image: ${BUSYBOX_IMAGE:?BUSYBOX_IMAGE is required (static build, e.g. busybox:<version>-musl)}
+    command: ["cp", "/bin/busybox", "/busybox/busybox"]
+    volumes:
+      - busybox_bin:/busybox
+    restart: "no"   # one-shot; the volume persists, so it is not needed again after reboot
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+  myservice:
+    image: ${MYSERVICE_IMAGE:?MYSERVICE_IMAGE is required}
+    restart: unless-stopped
+    depends_on:
+      infisical-agent:
+        condition: service_healthy
+      busybox-init:
+        condition: service_completed_successfully
+    entrypoint: ["/busybox/busybox", "sh", "-c"]
+    command:
+      - |
+        set -e
+        until [ -s /shared-secrets/<app>.env ]; do /busybox/busybox sleep 1; done
+        while IFS= read -r line || [ -n "$$line" ]; do
+          case "$$line" in
+            MY_KEY=*|OTHER_KEY=*) export "$$line" ;;
+          esac
+        done < /shared-secrets/<app>.env
+        test -n "$$MY_KEY" || { echo "MY_KEY missing from <app>.env" >&2; exit 1; }
+        test -n "$$OTHER_KEY" || { echo "OTHER_KEY missing from <app>.env" >&2; exit 1; }
+        # map to the names the app expects:
+        # export APP_KEY="$$MY_KEY"; unset MY_KEY
+        cd <image WorkingDir>
+        exec <original-entrypoint> <args>
+    volumes:
+      - shared_secrets:/shared-secrets:ro
+      - busybox_bin:/busybox:ro

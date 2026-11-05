@@ -21,6 +21,7 @@ failing.
 | `SKILL.md` | The pattern, setup steps, the reboot and offline-fallback tests, and common gotchas |
 | `references/compose-agent.yml` | The `infisical-agent` service, with its healthcheck |
 | `references/compose-consumer.yml` | A service that waits for the secrets file, then starts |
+| `references/compose-consumer-busybox.yml` | Same, for images with no shell and no shell variant: a one-shot helper supplies a static busybox |
 | `references/agent-config.yaml` | Agent settings: login method, output file; address is a `__INFISICAL_ADDRESS__` token |
 | `references/app.tpl` | Template that picks which secrets to write (project ID and env are tokens), ending in a `# render-complete` line |
 | `references/.env.agent.example` | Example of the agent's own file: login credentials plus Infisical address, project ID and env |
