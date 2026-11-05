@@ -49,6 +49,17 @@ New to a word? See the [word list](glossary.md).
 Warnings about jargon are not failures: explain the word in place or add it to
 the [word list](glossary.md).
 
+## `npx github:...` fails with EALLOWGIT
+
+npm 12 and later refuse to fetch packages from git by default
+(`Fetching packages of type "git" have been disabled`). Add the flag to the hook
+install command, or run the installer from a clone:
+
+```bash
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab install <hook>
+node bin/cli.js install <hook>    # from a clone of this repo
+```
+
 ## Still stuck?
 
 Re-read [how skills work](how-skills-work.md) to check the mental model, then

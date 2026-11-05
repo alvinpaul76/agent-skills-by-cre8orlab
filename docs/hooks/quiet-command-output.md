@@ -15,9 +15,9 @@ hook is installed once and runs on its own around every command.
 Needs Node.js and Python 3 (macOS or Linux). No clone, no npm account:
 
 ```bash
-npx github:alvinpaul76/agent-skills-by-cre8orlab install quiet-command-output
-npx github:alvinpaul76/agent-skills-by-cre8orlab status quiet-command-output
-npx github:alvinpaul76/agent-skills-by-cre8orlab uninstall quiet-command-output
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab install quiet-command-output
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab status quiet-command-output
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab uninstall quiet-command-output
 ```
 
 Then restart Claude Code and check `/hooks`. To try a branch first, add
