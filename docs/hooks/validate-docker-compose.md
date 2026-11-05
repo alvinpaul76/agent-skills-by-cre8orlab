@@ -16,9 +16,9 @@ Needs Node.js, Python 3, and PyYAML (`pip install pyyaml`). Docker Compose is
 optional; with it, the hook also checks the file's syntax.
 
 ```bash
-npx github:alvinpaul76/agent-skills-by-cre8orlab install validate-docker-compose
-npx github:alvinpaul76/agent-skills-by-cre8orlab status validate-docker-compose
-npx github:alvinpaul76/agent-skills-by-cre8orlab uninstall validate-docker-compose
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab install validate-docker-compose
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab status validate-docker-compose
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab uninstall validate-docker-compose
 ```
 
 Then restart Claude Code and check `/hooks`. The installer works the same way as for

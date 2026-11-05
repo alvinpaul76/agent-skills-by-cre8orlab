@@ -152,9 +152,9 @@ function help() {
   say("cre8orlab hook installer");
   say("");
   say("Usage:");
-  say("  npx github:alvinpaul76/agent-skills-by-cre8orlab install <hook>");
-  say("  npx github:alvinpaul76/agent-skills-by-cre8orlab status <hook>");
-  say("  npx github:alvinpaul76/agent-skills-by-cre8orlab uninstall <hook>");
+  say("  npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab install <hook>");
+  say("  npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab status <hook>");
+  say("  npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab uninstall <hook>");
   say("");
   say(`Hooks: ${names.join(", ") || "none"}`);
 }

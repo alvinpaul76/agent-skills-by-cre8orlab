@@ -44,10 +44,10 @@ npx skills add alvinpaul76/agent-skills-by-cre8orlab -g --skill fastapi-standard
 npx skills update -g    # later: refresh installed skills, from any folder
 ```
 
-Hooks install the same way, with the repo's own command:
+Hooks install with the repo's own command. npm 12+ blocks git packages by default, so the flag is needed:
 
 ```bash
-npx github:alvinpaul76/agent-skills-by-cre8orlab install quiet-command-output
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab install quiet-command-output
 ```
 
 Installing by hand, or upgrading an older install (skills moved into `skills/`)?

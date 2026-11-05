@@ -16,9 +16,9 @@ Needs Node.js and Python 3. The FastAPI check also needs the fastapi-documentati
 skill installed in `~/.claude/skills/`; other projects do not:
 
 ```bash
-npx github:alvinpaul76/agent-skills-by-cre8orlab install docs-drift-reminder
-npx github:alvinpaul76/agent-skills-by-cre8orlab status docs-drift-reminder
-npx github:alvinpaul76/agent-skills-by-cre8orlab uninstall docs-drift-reminder
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab install docs-drift-reminder
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab status docs-drift-reminder
+npx --allow-git=all github:alvinpaul76/agent-skills-by-cre8orlab uninstall docs-drift-reminder
 ```
 
 Then restart Claude Code and check `/hooks`. The installer works the same way as for
