@@ -18,9 +18,9 @@ exits or fails health checks. It also triggers when you ask to "deploy this" or
 
 | File | What it holds |
 | --- | --- |
-| `SKILL.md` | Base-image choices, non-negotiable rules, hardening checklist |
+| `SKILL.md` | Base-image choices, rules and hardening list, runtime, healthchecks, migrations, secrets, review steps |
 | `references/dockerfile.md` | A production multi-stage Dockerfile, `.dockerignore`, BuildKit secrets, healthcheck |
-| `references/compose.md` | Compose file with app, migrate, and Postgres services; dev override; `.env` pitfalls. Compose files are named `docker-compose*.yml` |
+| `references/compose.md` | Compose file with app, migrate, and Postgres services; dev override; hardening options; common failures |
 | `references/security-scanning.md` | Scanning the built image, triaging findings by source, CI gating |
 
 ## How does it work inside?
@@ -42,5 +42,7 @@ exits or fails health checks. It also triggers when you ask to "deploy this" or
 - Blocking builds on findings nobody can fix; unfixed vulnerabilities are
   reported separately from the gate.
 - Tags like `latest` in anything meant for production; base images are pinned.
+- Repeating the Compose naming, image-pinning, and `.env.example` rules; it follows
+  [docker-compose-standards](docker-compose-standards.md).
 
 Back to [how skills work](../how-skills-work.md).

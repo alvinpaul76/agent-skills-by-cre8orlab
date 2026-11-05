@@ -41,7 +41,7 @@ so you extend them instead of replacing them. Also learn what the project is *fo
 question; the README summary is only as good as this answer.
 
 Then get real examples: call the endpoints with the test client or the running app,
-using the `mock` backend or a placeholder key, and keep the actual answers.
+using a fake or test backend and a placeholder key, and keep the actual answers.
 
 Done when: you have a table of `{router, path, who may call it, what it is for}`
 covering every route (cross-check `grep -rn "include_router\|APIRouter"` for

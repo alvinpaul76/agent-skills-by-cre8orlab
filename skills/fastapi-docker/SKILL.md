@@ -1,203 +1,59 @@
 ---
 name: fastapi-docker
-description: Container and deployment standards for FastAPI services, covering Dockerfiles, multi-stage builds, non-root users, uvicorn or gunicorn runtime settings, healthchecks, database migrations as a separate step, secret handling, and Docker Compose for local development with Postgres. Use this skill whenever the user writes, reviews, or debugs a Dockerfile, .dockerignore, docker-compose.yml, or container runtime setup for a FastAPI or Python API service, asks how to containerize a FastAPI app, wants to run FastAPI with Postgres in Docker, or asks about container security hardening, image size, or getting uvicorn to behave behind a proxy in a container. Also use it when the user says "deploy this", "put this in a container", or "why does my container exit or fail health checks", even if they never say "Docker".
+description: Container and deployment standards for FastAPI and Python API services - multi-stage Dockerfiles, .dockerignore, uvicorn behind a proxy, healthchecks, migrations, secrets, hardening, image scanning, and Compose with Postgres. Use when writing, reviewing or debugging any of these, when containerizing or deploying a Python API, or when a container exits, fails health checks or shows CVEs, even if the user never says "Docker".
 ---
 
-# FastAPI Container Standards
+# FastAPI container standards
 
-These standards produce images that are small, reproducible, run without
-root, carry no secrets, and start the same way locally and in production.
-They cover the container and runtime layer only. For code structure (routes,
-use cases, repositories, errors), use the `fastapi-standards` skill.
+Goal: small, reproducible images that run as non-root, contain no secrets, and behave the same locally and in production. Scope is the container and runtime layer. Related skills: `fastapi-standards` (app code and the settings object), `docker-compose-standards` (Compose file names, image pinning, `.env.example`), `infisical-docker-agent` (when secrets come from Infisical, it replaces the secrets approach below).
 
-## Choosing the base images
+## Base images
 
-- **Python:** 3.14 is the default for new services. It is the current release
-  line, with bugfix support until October 2027 and security fixes until
-  October 2030. Before pinning it, confirm that every dependency publishes
-  3.14 wheels (FastAPI, Pydantic, SQLAlchemy, the Postgres driver, and any
-  C extensions). If one does not, use 3.13, which receives security fixes
-  until October 2029. Avoid starting new services on 3.12 unless something
-  requires it.
-- **Shared environments:** if the service runs in the same environment as
-  Odoo 18 or other Python tooling tied to older interpreters, pin the Python
-  version that environment supports, and verify the requirement against that
-  project's current documentation before deciding.
-- **Debian:** trixie (Debian 13) is the current default. Alpine is avoided
-  because most Python wheels target glibc, so musl builds often compile from
-  source and native dependencies fail or slow down.
-- **Postgres:** use the latest stable major (18.x) and a fixed minor tag.
+- **Python:** the newest release every dependency ships wheels for (3.14 today, else 3.13). Check FastAPI, Pydantic, SQLAlchemy, the Postgres driver and any C extensions. If the code must share an interpreter with Odoo 18 or other tooling, use the version that environment supports and confirm it in that project's docs.
+- **Image:** `python:3.14-slim-trixie`. Avoid Alpine: most wheels target glibc, so musl builds compile from source and native dependencies break.
+- **Postgres:** latest stable major (18) with a full minor tag, on the same Debian release as the app image so system libraries match.
 
-## Non-negotiable rules
+## Rules
 
-Treat these as blockers. If a request would break one, explain the risk and
-offer the compliant version.
+Blockers. If a request would break one, explain the risk and offer the compliant version.
 
-1. The container runs as a non-root user with a fixed numeric UID.
-2. No secrets in the image: not in `ENV`, `ARG`, `COPY`ed files, or layers.
-   Secrets come from the runtime environment or a secrets mechanism.
-3. Base images are pinned to a specific version. Never `latest`, never an
-   unpinned `python` tag in production.
-4. Migrations do not run as part of container startup. They run as a
-   separate, explicit step.
-5. The app binds to `0.0.0.0` inside the container on a non-privileged port
-   (8000 by default). Privileged ports are not used.
-6. No `--reload`, debug mode, or interactive API docs exposed in production
-   images.
-7. The build context is limited by `.dockerignore`, so `.env`, `.git`, caches,
-   and test artifacts never reach the image.
+1. Runs as a non-root user with a fixed numeric UID (10001), so platform policies can reference it.
+2. No secrets in the image (`ENV`, `ARG`, copied files, layers). Build-time credentials use `RUN --mount=type=secret`; `ARG` values show in `docker history`.
+3. Base images pinned (by digest in production); dependencies installed only from a lock file (`uv.lock`, or `requirements.txt` with hashes).
+4. Migrations run as a separate step, never at container startup, because replicas would race.
+5. Binds `0.0.0.0` on non-privileged port 8000.
+6. No `--reload`, debug mode, or open `/docs`, `/redoc`, `/openapi.json` in production.
+7. `.dockerignore` keeps `.env`, `.git`, caches and tests out of the build context.
 
-## Dockerfile shape
+Production hardening (should fix): `read_only: true` with `tmpfs` for writable paths; `cap_drop: [ALL]`; `no-new-privileges:true`; limits under `deploy.resources.limits`; no pip, uv or compilers after the final `FROM`; OS patches applied at build; image scanned in CI and rebuilt on a schedule.
 
-Use a multi-stage build: one stage compiles or installs dependencies, a
-second stage holds only the runtime. Read `references/dockerfile.md` for the
-complete example, including the `uv` variant and the BuildKit secret mount
-for private package indexes.
+## Runtime
 
-The essentials:
-
-- Start from a slim official Python image pinned to a minor version and a
-  Debian release: `python:3.14-slim-trixie`. Use a digest-pinned reference
-  in production. Keep the Debian release the same across the app and
-  Postgres images so system libraries match.
-- Set `PYTHONDONTWRITEBYTECODE=1` and `PYTHONUNBUFFERED=1`.
-- Install from a lock file (`uv.lock`, or a pinned `requirements.txt` with
-  hashes), never from unpinned `pip install fastapi`.
-- Create a system user with a fixed UID (for example 10001), set `USER` to it,
-  and copy app files so they are owned by root and readable by the app user.
-  The app does not need to write to its own code directory.
-- Use exec-form `CMD` so the process receives signals directly.
-
-## Runtime: uvicorn and proxies
-
-- Prefer **one process per container** and scale with replicas. Set
-  `--workers` only when you have a reason not to run multiple containers.
-  If you do use multiple workers, use gunicorn with `uvicorn.workers.UvicornWorker`,
-  which handles worker supervision better.
-- Behind a reverse proxy or load balancer, enable proxy headers and trust
-  only the proxy's address:
-  `--proxy-headers --forwarded-allow-ips=<proxy-ip-or-cidr>`.
-  Never use `*` on a publicly reachable port.
-- Set a graceful shutdown timeout (`--timeout-graceful-shutdown 20`, adjusted
-  to your slowest request) so orchestrators' SIGTERM does not cut requests off.
-- Keep `--reload` out of every non-development image.
+- One uvicorn process per container; scale with replicas. If a container genuinely needs several workers, use gunicorn with `uvicorn.workers.UvicornWorker`.
+- Behind a proxy: `--proxy-headers --forwarded-allow-ips=<proxy-ip-or-cidr>`. Never `*` on a publicly reachable port.
+- `--timeout-graceful-shutdown 20` (at least the slowest request), so SIGTERM doesn't cut requests off.
+- Exec-form `CMD`, or `sh -c "exec …"`, so uvicorn is PID 1 and receives signals.
 
 ## Healthchecks
 
-Split liveness from readiness:
-
-- **Liveness** (`/health/live`): returns 200 if the process can serve requests.
-  It does not touch the database or any external service. A database outage
-  should not restart every container.
-- **Readiness** (`/health/ready`): checks dependencies such as the database
-  with a short timeout. Use it for load balancer routing and orchestrator
-  readiness gates, not for restarts.
-
-Dockerfile `HEALTHCHECK` should call the liveness endpoint with Python's
-standard library, so the slim image does not need `curl`. See
-`references/dockerfile.md`.
+Liveness (`/health/live`) touches no dependencies: a database outage must not restart every container. Readiness (`/health/ready`) checks the database with a short timeout and gates routing, not restarts. The Dockerfile `HEALTHCHECK` calls liveness with the Python standard library, so the slim image needs no `curl`. On Kubernetes or ECS the platform probes replace it.
 
 ## Migrations
 
-Run migrations as an explicit one-off step before the new version receives
-traffic:
+Compose: a `migrate` service with `restart: "no"` running `alembic upgrade head`, which `api` depends on with `condition: service_completed_successfully`. Kubernetes: a Job. Keep each migration compatible with the running version so rolling deploys survive the overlap.
 
-- Compose (local): a `migrate` service with `restart: "no"` that runs
-  `alembic upgrade head`, which the app service depends on with
-  `condition: service_completed_successfully`.
-- Kubernetes or similar: a Job or init step, not the app container's `CMD`.
-- Never run migrations from the app's startup code, because multiple replicas
-  would race each other.
+## Secrets
 
-Migrations should be backward compatible with the currently running version,
-so a rolling deploy does not break during the window where old and new
-containers coexist.
+Configuration comes from environment variables through the settings object; never log it or a connection string. Under Compose, passwords come from Docker secret files (`DATABASE_PASSWORD_FILE`), not `.env`. In production use the platform's secret store, or Infisical via `infisical-docker-agent`.
 
-## Secrets and configuration
+## Reviewing
 
-- Configuration comes from environment variables. The app reads them through
-  its settings object (see `fastapi-standards`).
-- Local development uses an env file that is git-ignored. Commit an
-  `.env.example` with placeholder values instead.
-- Production secrets come from the platform's secret store, or from Docker
-  secrets / mounted files for Compose. Prefer `DATABASE_PASSWORD_FILE`-style
-  file references over raw passwords in environment variables when the
-  platform supports it.
-- If a build needs a credential (for example a private package index), use
-  `RUN --mount=type=secret` with BuildKit. The secret is not stored in any
-  layer. Never pass it as `ARG`, because `docker history` reveals it.
-- Never log the settings object or connection strings.
+Check the rules, then the image (stages, pinning, lock file, `.dockerignore`, dependency layer before code), runtime, and Compose (dependency conditions, exposure, volumes, hardening, `docker-compose-standards`). Scan the built image rather than guessing CVEs from the Dockerfile text. Report findings as blocker, should fix, or suggestion, with corrected lines; say what is already right, and don't invent problems in a correct file.
 
-## Compose for local development
+## References
 
-Read `references/compose.md` for the full file. The key properties:
+Read only the one the task needs.
 
-- Pin the Postgres image version and give it a `healthcheck` (`pg_isready`).
-- The app waits on Postgres with `condition: service_healthy`, and on
-  migrations with `condition: service_completed_successfully`.
-- Postgres is on an internal network. Publish its port to the host only when
-  you need local tools to connect, and bind it to `127.0.0.1`.
-- Use a named volume for database data.
-- The dev override (bind mounts, `--reload`) lives in a separate
-  `docker-compose.override.yml` or `docker-compose.dev.yml`. Production-like
-  runs use the base file alone.
-- Name the base compose file `docker-compose.yml`. Any additional compose file
-  is prefixed with `docker-compose.` (for example `docker-compose.override.yml`,
-  `docker-compose.prod.yml`). Always use the `.yml` extension, never `.yaml`.
-
-## Hardening checklist
-
-Apply these to every production service. Compose examples show how.
-
-- Non-root user with fixed UID (Dockerfile).
-- `read_only: true` root filesystem, with `tmpfs` for any path that must be
-  writable such as `/tmp`.
-- `cap_drop: [ALL]` and `security_opt: ["no-new-privileges:true"]`.
-- Memory and CPU limits set (`mem_limit`, `cpus` or platform equivalent).
-- Image scanned in CI (Trivy, Grype, or the registry's scanner) before
-  deployment. Fail on critical or high findings that have fixes available.
-- Base images rebuilt on a schedule to pick up OS security patches, because
-  pinning the version does not pin the patch level unless you use a digest.
-- Interactive docs (`/docs`, `/redoc`, `/openapi.json`) disabled or protected
-  in production.
-- No package managers, compilers, or build tools in the runtime stage. This
-  includes pip: the Python base image ships it, and its vendored libraries are
-  a common source of scanner findings, so delete it in the runtime stage.
-- Digest-pinned base images, with `apt-get upgrade` in the runtime stage so OS
-  patches released after the pinned digest still land.
-
-## Scanning and fixing vulnerabilities
-
-Scan the built image, not the Dockerfile, because findings come from the
-packages that end up in it. Read `references/security-scanning.md` for the
-commands, how to tell where a finding comes from (OS package, your lock file,
-or pip's vendored copies), and the fix for each. Gate CI on HIGH and CRITICAL
-findings that have a fix available, and report unfixed ones separately so they
-do not block builds nobody can act on.
-
-## Reviewing a Dockerfile or compose file
-
-1. Check the non-negotiable rules first.
-2. Check the image: stage separation, pinned base, lock file, `.dockerignore`,
-   layer ordering (dependency install before app code copy, so code changes
-   do not reinstall dependencies).
-3. Check runtime: exec-form CMD, user, port, signal handling, proxy settings,
-   healthcheck.
-4. Check compose: healthchecks and dependency conditions, network exposure,
-   volumes, secrets, hardening options, and that every `${VAR}` it
-   interpolates (and every Dockerfile `CMD` variable) is in `.env.example`.
-5. Scan the built image (see `references/security-scanning.md`) rather than
-   guessing at CVEs from the Dockerfile text.
-6. Report findings by severity (blocker, should fix, suggestion) with the
-   corrected lines. Say what is already correct. Do not invent problems in a
-   simple, correct file.
-
-## Reference files
-
-- `references/dockerfile.md`: full multi-stage Dockerfile (pip and uv
-  variants), `.dockerignore`, BuildKit secret mount, HEALTHCHECK.
-- `references/compose.md`: compose file with app, migrate, and Postgres
-  services; dev override; hardening options.
-- `references/security-scanning.md`: scanning the image, triaging findings by
-  source, the standard fixes, and CI gating.
-- Read only the file the task needs.
+- `references/dockerfile.md`: uv and pip Dockerfiles, `.dockerignore`, secret mount, build checks.
+- `references/compose.md`: app, migrate and Postgres stack; dev override; common failures.
+- `references/security-scanning.md`: scanning, tracing a finding to its source, fixes, CI gating.

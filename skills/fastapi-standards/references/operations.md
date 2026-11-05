@@ -18,8 +18,8 @@
 -   Use a typed settings class, such as Pydantic Settings.
 -   Read configuration from environment variables or a managed secrets
     system.
--   Keep `.env` files out of version control; commit `.env.example` with
-    placeholder values only.
+-   Keep `.env` out of version control; commit `.env.example` (rules in
+    the `docker-compose-standards` skill).
 -   Validate required settings at startup.
 -   Separate development, testing, staging, and production
     configuration.
@@ -55,7 +55,12 @@ rules in environment variables.
     WARNING at startup when it is off, and say in the README that it is for
     local development only.
 -   Keep one definition of each variable: `config.py`, `.env.example`, the
-    compose file, and the README list the same names and defaults.
+    compose file, and the README list the same names and defaults, and a test
+    fails when `config.py` and `.env.example` drift apart.
+-   Under Docker secrets, accept a `<NAME>_FILE` path (for example
+    `DATABASE_PASSWORD_FILE`) and read the value from the file when it is set;
+    build connection strings from parts in the settings class and never log
+    them.
 -   Provide a `make_settings(**overrides)` test helper that sets
     `_env_file=None`, so a developer's real `.env` never leaks into tests.
 
@@ -79,8 +84,8 @@ rules in environment variables.
     layer.
 -   Avoid leaking whether sensitive accounts or records exist when that
     distinction matters.
--   Keep dependencies patched and scan dependencies and container
-    images.
+-   Keep dependencies patched and scan them; image scanning is in the
+    `fastapi-docker` skill.
 -   Redact personal data and secrets from logs.
 -   Do not trust forwarded headers unless they come from configured
     trusted proxies.
@@ -137,17 +142,14 @@ a full token system is more than the risk calls for.
     validation and every other check still run.
 -   Put the toggle check inside `require_api_key` (and the startup check),
     so the routes and the router stay identical in both modes.
--   Pass both variables through the compose file with
-    `${<PREFIX>_AUTH_ENABLED:-true}` and `${<PREFIX>_CLIENT_API_KEYS:-}`, and
-    let the app's own startup check enforce the keys. A compose `:?`
-    requirement would block a deliberate `AUTH_ENABLED=false`.
+-   Pass both through the compose file with `:-` defaults
+    (`${<PREFIX>_AUTH_ENABLED:-true}`, `${<PREFIX>_CLIENT_API_KEYS:-}`) and let
+    the app's startup check enforce the keys (see `docker-compose-standards`).
 -   Document both in `.env.example` with a command to generate a key
     (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
 -   With auth off the interactive docs still show the Authorize button
     (the security scheme stays in the OpenAPI schema), so say that the key is
     ignored.
--   Never define the same variable twice in `.env`: the last definition wins
-    and the earlier one is silently ignored.
 
 Out of scope for this pattern: rate limiting, per-key quotas, and hashed key
 storage. Add them when keys move into a database or callers become untrusted.
@@ -216,7 +218,7 @@ Tests should follow the architecture.
 ```python
 @pytest.fixture
 def client() -> Iterator[TestClient]:
-    app = create_app(Settings(_env_file=".env.test"))
+    app = create_app(make_settings())  # section 13: never reads a real .env
     app.dependency_overrides[get_create_user_use_case] = lambda: CreateUserUseCase(
         users=InMemoryUserRepository(),
         uow=FakeUnitOfWork(),
@@ -280,10 +282,10 @@ tests independent of route tests.
 -   Estimate worst-case latency (items x per-item time) against the client
     and proxy timeouts. When it will not fit, move the work to an async job
     with a job id (section 18).
--   Reject output-only fields (labels, scores, status) in the request with
-    `extra="forbid"`, so callers cannot feed answers into the model or
-    bypass computed values.
--   Give the port a `classify_many`-style method so an adapter can later
+-   Reject output-only fields (scores, status, computed totals) in the
+    request with `extra="forbid"`, so callers cannot supply values the
+    service is meant to compute.
+-   Give the port a `process_many`-style method so an adapter can later
     parallelize without changing the use case.
 -   Replacing a response shape is a breaking change: add a new version, or
     state in the PR that no consumer depends on the old shape.
@@ -314,20 +316,14 @@ CLI command --------+
 
 ## 19. Performance and scalability
 
--   Measure before optimizing.
--   Avoid N+1 database access and unbounded result sets.
--   Paginate list endpoints.
--   Add indexes based on query patterns and measured plans.
--   Set timeouts for database and outbound network operations.
--   Reuse long-lived connection pools and HTTP clients where
-    appropriate.
--   Avoid expensive CPU-bound work on the event loop.
--   Use caching only with explicit invalidation and correctness rules.
--   Apply limits to concurrency, payload sizes, file uploads, and batch
-    processing.
--   Do not add caching or distributed infrastructure before the need is
-    established.
--   Use load tests for critical paths and expected concurrency.
+N+1 queries, pagination, timeouts and CPU work on the event loop are
+covered in sections 7, 11 and 17. Beyond those:
+
+-   Measure before optimizing; load-test critical paths at expected
+    concurrency.
+-   Add indexes from query patterns and measured plans.
+-   Reuse long-lived connection pools and HTTP clients.
+-   Add caching only when measured, with explicit invalidation rules.
 
 
 ## 20. Code style and type safety
@@ -364,19 +360,11 @@ CLI command --------+
     entry (`uvicorn.run("pkg.main:create_app", factory=True, ...)`).
 -   When docs are exposed, redirect `/` to `/docs` (excluded from the
     schema and open without auth); when they are not, leave `/` as a 404.
--   Run database migrations as a controlled deployment step.
--   Configure trusted hosts, proxy headers, TLS termination, and allowed
-    origins appropriately for the deployment.
--   Run the application as a non-root user in containers.
--   Use graceful shutdown and sensible worker/time limits.
--   Store logs on standard output/error for containerized deployments.
--   Separate web process scaling from background worker scaling.
--   Document how to run locally, test, migrate, and deploy.
+-   Log to standard output; scale web processes and background workers
+    separately.
 -   Test the exact startup command used in production.
--   Behind a reverse proxy, enable proxy headers only for the proxy's
-    address (for example, Uvicorn's `--proxy-headers
-    --forwarded-allow-ips=<proxy-ip>`), never `*` on a publicly
-    reachable port.
+-   Containers, migrations as a deploy step, proxy headers, non-root users
+    and graceful shutdown are in the `fastapi-docker` skill.
 
 Example factory and lifespan:
 
@@ -412,40 +400,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
         docs_url="/docs" if settings.expose_docs else None,
         redoc_url=None,
+        openapi_url="/openapi.json" if settings.expose_docs else None,  # the schema leaks too
     )
     app.state.settings = settings
     register_exception_handlers(app)
     app.include_router(api_router, prefix="/api")
     return app
-
-
-app = create_app()
 ```
 
-Shared resources live on `app.state` and are created inside lifespan,
-not at import time, so tests can build an app with different settings.
+There is no module-level `app = create_app()`: startup validation would run
+on import. Start it with `uvicorn app.main:create_app --factory`. Shared
+resources live on `app.state` and are created inside lifespan, so tests can
+build an app with different settings.
 
 
 ## 22. Dependency and tooling baseline
 
-Select versions compatible with the supported Python runtime and pin
-them through a lockfile or reproducible dependency workflow.
-
-A typical stack may include:
-
--   **FastAPI** — HTTP framework
--   **Pydantic / Pydantic Settings** — validation and configuration
--   **SQLAlchemy** — ORM and database toolkit, if a relational
-    database is used
--   **Alembic** — schema migrations
--   **PostgreSQL** — relational database, when appropriate
--   **HTTPX** — HTTP client and testing support
--   **Pytest** — testing
--   **Ruff** — linting and formatting
--   **mypy or Pyright** — optional static type checking
--   **asgi-lifespan** — useful for testing lifespan-dependent
-    applications
--   **OpenTelemetry** — optional tracing and metrics instrumentation
-
-Do not install every tool by default. Choose based on the application,
-runtime, and operational requirements.
+Pin versions through a lock file (`uv.lock`). A typical stack: FastAPI,
+Pydantic and pydantic-settings, SQLAlchemy and Alembic (with a relational
+database), HTTPX, pytest, Ruff, and optionally mypy or Pyright and
+OpenTelemetry. Add a tool when the project needs it, not by default.

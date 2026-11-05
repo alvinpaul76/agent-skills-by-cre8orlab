@@ -1,7 +1,7 @@
   # Consumer: wait for rendered file, export needed keys, exec original entrypoint.
-  # Image needs /bin/sh (use e.g. the :alpine tag if the default image is scratch/distroless).
+  # Image needs /bin/sh (pin a variant with a shell, e.g. <version>-alpine, if the default is scratch/distroless).
   myservice:
-    image: <image>
+    image: ${MYSERVICE_IMAGE:?MYSERVICE_IMAGE is required}
     restart: unless-stopped
     depends_on:
       infisical-agent:

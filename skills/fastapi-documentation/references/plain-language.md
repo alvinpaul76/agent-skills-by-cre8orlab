@@ -37,7 +37,7 @@ a developer what a word means, the page has failed.
 |---|---|
 | "Requests traverse the middleware stack, then the auth dependency." | "Each request first gets an ID for tracing, then the service checks the API key. Only then does it look at what you sent." |
 | "Returns 422 with RFC 9457 problem details on schema violation." | "If something in your request is not valid (for example an empty title), the service answers with status 422 and lists which fields to fix." |
-| "Adapter serializes inference via a mutex." | "The service handles one ticket at a time on the local model, so a large batch takes a few seconds." |
+| "Adapter serializes calls via a mutex." | "The service handles one item at a time, so a large batch takes a few seconds." |
 | "Fail-closed at startup." | "If no API keys are configured, the service refuses to start. This prevents it from running open by accident." |
 
 ## Plain-language glossary starter
@@ -48,7 +48,7 @@ project.
 | Term | In plain words |
 |---|---|
 | API | A way for one program to ask another program to do something. |
-| Endpoint | One specific address of the API that does one job, like `/api/v1/ticket-analyses`. |
+| Endpoint | One specific address of the API that does one job, like `/api/v1/orders`. |
 | Request / response | What a program sends, and what it gets back. |
 | JSON | A text format for structured data: names and values in `{ }`. |
 | Header | Extra information sent with a request, such as the API key. |
@@ -56,7 +56,7 @@ project.
 | Status code | A number in every response: 2xx worked, 4xx the request has a problem, 5xx the service has a problem. |
 | Batch | Several items sent in one request. |
 | Validation | Checking that what was sent is complete and within limits before doing any work. |
-| Environment variable | A setting given to the program from outside, such as `JEV_BACKEND=jev`. |
+| Environment variable | A setting given to the program from outside, such as `LOG_LEVEL=info`. |
 | `.env` file | A private text file on your machine that holds those settings. It is never shared or committed. |
 | Docker / container | A sealed package that runs the service the same way on any computer. |
 | Health check | A tiny address that tells you whether the service is running and ready. |

@@ -11,9 +11,9 @@ The user repeats this closing routine at the end of a piece of work. Run it end 
 
 Review what changed, not the whole repo: `git status`, `git diff HEAD` (plus the last commit if the work is already committed but unpushed, `git log @{u}..`).
 
-Look past the edited lines to what depends on them. A change to a config format, variable, path or function usually breaks something that reads it: helper scripts, docs, CI, systemd units, examples. Grep for every renamed or reshaped thing. In the past this caught a shell script whose parser didn't understand a new `${VAR:-default}` syntax in a compose file.
+Look past the edited lines to what depends on them. A change to a config format, variable, path or function usually breaks something that reads it: helper scripts, docs, CI, systemd units, examples. Grep for every renamed or reshaped thing; a shell script that can't parse a new `${VAR:-default}` in a compose file is the typical miss.
 
-Also check: duplicated keys, leftover debug code, secrets or real credentials in tracked files, and `.env.example` kept in sync with `.env`.
+Also check: duplicated keys, leftover debug code, secrets or real credentials in tracked files, and `.env.example` declaring every variable `.env` and the compose files use (for Compose changes, the `docker-compose-standards` rules).
 
 Verify rather than assume: run the project's validation (e.g. `docker compose config -q`, `bash -n`, tests, linters) and exercise changed logic in isolation when it can't be run for real (e.g. sourcing a single function).
 
@@ -22,7 +22,7 @@ Fix what the review found, minimally and within scope. Stop and ask only if a fi
 
 ## 3. Update documentation
 
-Update README and any other docs describing what changed: new or renamed variables, defaults, required vs optional settings, setup steps, troubleshooting entries. Make examples match `.env.example` and the code. Don't add docs for things that didn't change.
+Follow the repo's own rules first (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`): required changelog or ticket entries, doc pages and checks are part of this step. Then update README and any other docs describing what changed: new or renamed variables, defaults, required vs optional settings, setup steps, troubleshooting entries. Make examples match `.env.example` and the code. Don't add docs for things that didn't change.
 
 ## 4. Commit
 

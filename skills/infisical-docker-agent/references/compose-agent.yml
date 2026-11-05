@@ -28,8 +28,11 @@ services:
       - /run/infisical-tpl:mode=0700
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    mem_limit: 256m
-    cpus: 0.5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
     restart: unless-stopped
     healthcheck:
       test:
