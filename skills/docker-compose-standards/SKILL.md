@@ -20,6 +20,7 @@ Base file `docker-compose.yml`; additional files `docker-compose.<purpose>.yml` 
 3. Name it `<SERVICE>_IMAGE` in upper snake case. Keep a project's existing names (such as `INFISICAL_CLI_IMAGE`) rather than renaming them.
 4. Services with `build:` are local and exempt; an `image:` next to `build:` is only the output tag (`myapi:local`).
 5. Never change a version the user did not ask to change. When adding or bumping one, confirm the tag exists for the target architecture (`docker buildx imagetools inspect <ref>`) and say that you did.
+6. When you suggest, add or pin a version (including examples and placeholders), look up the current stable release first (registry tags or the project's releases page) and use that exact `major.minor.patch`, never an invented one like `0.x.y`. Say which version you found. "Latest" is only how you choose the version to pin; it never goes in `image:` or `.env` as a floating tag.
 
 ## .env and .env.example
 
