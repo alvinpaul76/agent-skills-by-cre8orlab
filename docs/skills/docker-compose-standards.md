@@ -42,6 +42,8 @@ Whenever you create, change, review, or debug a `docker-compose*.yml`, `.env`, o
 
 - Changing an image version you did not ask to change. When it adds or upgrades
   one, it first confirms that the version exists for your machine type.
+- Inventing a version. When it suggests or pins one, it looks up the current stable
+  release first, uses that exact `major.minor.patch`, and tells you which it found.
 - Renaming an existing project's `compose.yaml`, because scripts and CI refer to it.
 - Hardening, health checks, and secrets handling; those belong to the domain skills.
 
