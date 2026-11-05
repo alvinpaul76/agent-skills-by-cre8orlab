@@ -23,12 +23,17 @@ self-contained, so an agent loads only what a task calls for.
 
 Each skill's folder is under [`skills/`](skills/). Each page explains when the skill
 triggers and what is inside it.
-The repo also ships the [voice-notify](docs/plugins/voice-notify.md) plugin, three Claude Code hooks
-([quiet-command-output](docs/hooks/quiet-command-output.md),
-[docs-drift-reminder](docs/hooks/docs-drift-reminder.md) and
-[validate-docker-compose](docs/hooks/validate-docker-compose.md)), and the reusable rules files
-[`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) — copy them per project or globally; see
-[rules files](docs/installation.md#rules-files-agentsmd-and-claudemd).
+
+## Hooks
+
+| Hook | What it does | Docs |
+| --- | --- | --- |
+| quiet-command-output | Shrinks noisy install, build, and test output before the agent reads it | [quiet-command-output](docs/hooks/quiet-command-output.md) |
+| docs-drift-reminder | Reminds the agent to update docs after code edits; in FastAPI projects it also checks for drift | [docs-drift-reminder](docs/hooks/docs-drift-reminder.md) |
+| validate-docker-compose | Checks Compose changes against docker-compose-standards; sends the agent back to fix them | [validate-docker-compose](docs/hooks/validate-docker-compose.md) |
+
+Also shipped: the [voice-notify](docs/plugins/voice-notify.md) plugin and the rules files
+[`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) ([how to use](docs/installation.md#rules-files-agentsmd-and-claudemd)).
 
 ## Get started
 
