@@ -17,8 +17,10 @@ Also check: duplicated keys, leftover debug code, secrets or real credentials in
 
 Verify rather than assume: run the project's validation (e.g. `docker compose config -q`, `bash -n`, tests, linters) and exercise changed logic in isolation when it can't be run for real (e.g. sourcing a single function).
 
+Check test coverage of the change: if it touches logic that has tests, run them. If it adds or changes logic (functions, branches, endpoints) with no test, that's a gap. Config, Docker and docs-only changes usually need no tests.
+
 ## 2. Fix
-Fix what the review found, minimally and within scope. Stop and ask only if a fix would change intended behavior, needs a design choice between options, deletes or rewrites significant code, or falls outside the scope of the work. Otherwise fix it and note it in the report. Mention anything you left alone.
+Fix what the review found, minimally and within scope. For a coverage gap, add a minimal test if it's small and obvious (one function, clear expected behavior). For larger gaps, or if the right behavior to assert is unclear, don't write a test suite here: list the gap under "left alone" in the report. Stop and ask only if a fix would change intended behavior, needs a design choice between options, deletes or rewrites significant code, or falls outside the scope of the work. Otherwise fix it and note it in the report. Mention anything you left alone.
 
 ## 3. Update documentation
 
@@ -38,4 +40,4 @@ Follow the repo's own rules first (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`):
 
 ## Report
 
-End with a short summary: what the review found, what was fixed, which docs changed, commit hashes, and that the push succeeded. State plainly anything that failed or was skipped.
+End with a short summary: what the review found, what was fixed, which tests ran or were added and any coverage gaps left, which docs changed, commit hashes, and that the push succeeded. State plainly anything that failed or was skipped.

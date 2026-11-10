@@ -15,14 +15,16 @@ call it directly with `/review-fix-ship`.
 ## What does it do?
 
 1. **Review** the current changes and anything that depends on them (renamed
-   settings, scripts, docs, examples), then run the project's checks.
+   settings, scripts, docs, examples), then run the project's checks and any
+   tests that cover the change.
 2. **Fix** what the review found, in scope. It stops and asks only if a fix changes
-   intended behavior or needs a design choice.
+   intended behavior or needs a design choice. Small, obvious test gaps get a
+   minimal test; bigger ones are listed in the report.
 3. **Update documentation** for what changed.
 4. **Commit** with specific files staged by name (never `git add -A`).
 5. **Push** the current branch. No force-push, no pull request unless you ask.
 
-It ends with a short report: findings, fixes, docs changed, commit hashes, and
+It ends with a short report: findings, fixes, tests run or added (and gaps left), docs changed, commit hashes, and
 whether the push worked.
 
 ## Does it change anything?
